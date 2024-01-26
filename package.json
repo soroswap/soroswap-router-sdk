@@ -1,0 +1,29 @@
+{
+  "name": "soroswap-router-sdk",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/soroswap/soroswap-router-sdk.git",
+  "author": "abstract829 <maxxii.1820@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start:example": "npx ts-node src/example.ts"
+  },
+  "dependencies": {
+    "@ethersproject/address": "^5.7.0",
+    "@ethersproject/solidity": "^5.7.0",
+    "axios": "^1.6.5",
+    "big.js": "^6.2.1",
+    "decimal.js-light": "^2.5.1",
+    "dotenv": "^16.4.0",
+    "jsbi": "^4.3.0",
+    "tiny-invariant": "^1.3.1",
+    "toformat": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/big.js": "^6.2.2",
+    "@types/node": "^20.11.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
