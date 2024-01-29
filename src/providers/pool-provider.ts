@@ -1,4 +1,5 @@
 import { Token } from "../entities";
+import { Pair } from "../entities/pair";
 
 export class PoolProvider {
   private POOL_ADDRESS_CACHE: { [key: string]: string } = {};
@@ -6,10 +7,12 @@ export class PoolProvider {
   constructor() {}
 
   public async getPools() {
+    //obtiene/recibe pairs y obtiene su liquidez devolviendo las pools validas
+
     return {
-      getPool: (tokenA: Token, tokenB: Token) => {},
-      getPoolAddress: (address: string) => {},
-      getAllPools: () => [],
+      getPool: (tokenA: Token, tokenB: Token): Pair => ({} as Pair),
+      getPoolAddress: (address: string): Pair => ({} as Pair),
+      getAllPools: (): Pair[] => [],
     };
   }
 

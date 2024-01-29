@@ -6,11 +6,16 @@ import _Big from "big.js";
 //@ts-ignore
 import toFormat from "toformat";
 
-import { BigintIsh, Rounding } from "../../constants";
+import { BigintIsh } from "../../constants";
 
 const Decimal = toFormat(_Decimal);
 const Big = toFormat(_Big);
 
+export enum Rounding {
+  ROUND_DOWN,
+  ROUND_HALF_UP,
+  ROUND_UP,
+}
 const toSignificantRounding = {
   [Rounding.ROUND_DOWN]: Decimal.ROUND_DOWN,
   [Rounding.ROUND_HALF_UP]: Decimal.ROUND_HALF_UP,

@@ -1,4 +1,5 @@
 import invariant from "tiny-invariant";
+import { BigNumber } from "@ethersproject/bignumber";
 
 import { BaseCurrency } from "./base-currency";
 import { Currency } from "./currency";
@@ -14,6 +15,13 @@ export class Token extends BaseCurrency {
    * The contract address on the chain on which this token lives
    */
   public readonly address: string;
+
+  /**
+   * Relevant for fee-on-transfer (FOT) token taxes,
+   * Not every ERC20 token is FOT token, so this field is optional
+   */
+  public readonly buyFeeBps?: BigNumber;
+  public readonly sellFeeBps?: BigNumber;
 
   /**
    *
