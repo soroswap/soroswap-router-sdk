@@ -13,6 +13,16 @@ import { Logger } from "@ethersproject/logger";
 import { log } from "../utils/log";
 import { Pair } from "../entities/pair";
 
+export type V2RouteWithValidQuote = {
+  route: V2Route;
+  rawQuote: BigNumber;
+  amount: CurrencyAmount;
+  percent: number;
+  tradeType: TradeType;
+  quoteToken: Token;
+  poolProvider: PoolProvider;
+} | null;
+
 export class Router {
   private _chainId: number;
   private _poolProvider: PoolProvider;
@@ -44,6 +54,7 @@ export class Router {
     const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
     const routes = await this._getAllRoutes(tokenIn, tokenOut);
+
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
       tokenOut,
@@ -52,14 +63,12 @@ export class Router {
 
     if (!routeQuote) return null;
 
-    this._buildTrade(
+    return this._buildTrade(
       currencyIn,
       currencyOut,
       TradeType.EXACT_INPUT,
       routeQuote
     );
-
-    return { ok: true };
   }
 
   public async routeExactOut(
@@ -78,21 +87,19 @@ export class Router {
 
     if (!routeQuote) return null;
 
-    const trade = this._buildTrade(
+    return this._buildTrade(
       currencyIn,
       currencyOut,
       TradeType.EXACT_OUTPUT,
       routeQuote
     );
-
-    return { ok: true };
   }
 
   private async _findBestRouteExactIn(
     amountIn: CurrencyAmount,
     tokenOut: Token,
     routes: V2Route[]
-  ) {
+  ): Promise<V2RouteWithValidQuote> {
     const { routesWithQuotes: quotesRaw } =
       await this._quoteProvider.getQuotesManyExactIn([amountIn], routes);
 
@@ -224,27 +231,12 @@ export class Router {
       }
     });
 
-    const USDC_TOKEN = new Token(
-      1,
-      "CAMZFR4BHDUMT6J7INBBBGJG22WMS26RXEYORKC2ERZL2YGDIEEKTOJB",
-      7,
-      "USDC"
-    );
-
     const routeQuotes = _.map(routeQuotesRaw, ({ route, quote, amount }) => {
       return {
         route,
         rawQuote: quote,
         amount,
         percent: 100,
-        gasModel: {
-          estimateGasCost: () => ({
-            gasCostInToken: CurrencyAmount.fromRawAmount(quoteToken, 0),
-            gasCostInUSD: CurrencyAmount.fromRawAmount(USDC_TOKEN, 0),
-            gasEstimate: BigNumber.from(0),
-          }),
-        },
-        quoterGasEstimate: BigNumber.from(0),
         tradeType: routeType,
         quoteToken,
         poolProvider: this._poolProvider,
@@ -258,6 +250,13 @@ export class Router {
     tokenInCurrency: Currency,
     tokenOutCurrency: Currency,
     tradeType: TradeType,
-    routeAmount: any
-  ) {}
+    routeAmount: V2RouteWithValidQuote
+  ) {
+    return {
+      tokenInCurrency,
+      tokenOutCurrency,
+      tradeType,
+      routeAmount,
+    };
+  }
 }

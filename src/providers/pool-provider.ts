@@ -1,5 +1,13 @@
-import { Token } from "../entities";
+import { CurrencyAmount, Token } from "../entities";
 import { Pair } from "../entities/pair";
+import {
+  BRL_TOKEN,
+  BRL_XLM,
+  USDC_BRL,
+  USDC_TOKEN,
+  USDC_XLM,
+  XLM_TOKEN,
+} from "../example";
 
 export class PoolProvider {
   private POOL_ADDRESS_CACHE: { [key: string]: string } = {};
@@ -12,7 +20,9 @@ export class PoolProvider {
     return {
       getPool: (tokenA: Token, tokenB: Token): Pair => ({} as Pair),
       getPoolAddress: (address: string): Pair => ({} as Pair),
-      getAllPools: (): Pair[] => [],
+      getAllPools: (): Pair[] => {
+        return [USDC_XLM, USDC_BRL, BRL_XLM];
+      },
     };
   }
 
