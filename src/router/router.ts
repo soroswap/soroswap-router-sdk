@@ -12,6 +12,8 @@ import _ from "lodash";
 import { Logger } from "@ethersproject/logger";
 import { log } from "../utils/log";
 import { Pair } from "../entities/pair";
+import { Route } from "../entities/route";
+import JSBI from "jsbi";
 
 export type V2RouteWithValidQuote = {
   route: V2Route;
@@ -252,11 +254,87 @@ export class Router {
     tradeType: TradeType,
     routeAmount: V2RouteWithValidQuote
   ) {
-    return {
-      tokenInCurrency,
-      tokenOutCurrency,
-      tradeType,
-      routeAmount,
-    };
+    if (!routeAmount) return null;
+
+    const { route, amount, rawQuote, quoteToken } = routeAmount;
+
+    const quote = CurrencyAmount.fromRawAmount(quoteToken, rawQuote.toString());
+
+    if (tradeType == TradeType.EXACT_INPUT) {
+      const amountCurrency = CurrencyAmount.fromFractionalAmount(
+        tokenInCurrency,
+        amount.numerator,
+        amount.denominator
+      );
+      const quoteCurrency = CurrencyAmount.fromFractionalAmount(
+        tokenOutCurrency,
+        quote.numerator,
+        quote.denominator
+      );
+
+      const routeCurrency = new Route(
+        route.pairs,
+        amountCurrency.currency,
+        quoteCurrency.currency
+      );
+
+      const trade = {
+        amountIn: JSBI.divide(
+          amountCurrency.numerator,
+          amountCurrency.denominator
+        ).toString(),
+        amountOutMin: JSBI.divide(
+          quoteCurrency.numerator,
+          quoteCurrency.denominator
+        ).toString(),
+        path: routeCurrency.path.map((token) => token.address),
+      };
+
+      return {
+        amountCurrency,
+        quoteCurrency,
+        tradeType,
+        routeCurrency,
+        trade,
+      };
+    } else {
+      const quoteCurrency = CurrencyAmount.fromFractionalAmount(
+        tokenInCurrency,
+        quote.numerator,
+        quote.denominator
+      );
+
+      const amountCurrency = CurrencyAmount.fromFractionalAmount(
+        tokenOutCurrency,
+        amount.numerator,
+        amount.denominator
+      );
+
+      const routeCurrency = new Route(
+        route.pairs,
+        quoteCurrency.currency,
+        amountCurrency.currency
+      );
+
+      const trade = {
+        amountOut: JSBI.divide(
+          amountCurrency.numerator,
+          amountCurrency.denominator
+        ).toString(),
+        amountInMax: JSBI.divide(
+          quoteCurrency.numerator,
+          quoteCurrency.denominator
+        ).toString(),
+        path: routeCurrency.path.map((token) => token.address),
+      };
+
+      return {
+        amountCurrency,
+        quoteCurrency,
+        tradeType,
+        routeCurrency,
+        trade,
+      };
+    }
   }
 }

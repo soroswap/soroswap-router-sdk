@@ -35,14 +35,14 @@ export const BRL_XLM = new Pair(
 );
 
 export const USDC_XLM = new Pair(
-  CurrencyAmount.fromRawAmount(USDC_TOKEN, 10000000),
+  CurrencyAmount.fromRawAmount(USDC_TOKEN, 100000000),
   CurrencyAmount.fromRawAmount(XLM_TOKEN, 10000000)
 );
 
 (async function () {
   const router = new Router(ChainId.TESTNET);
 
-  const currencyAmount = CurrencyAmount.fromRawAmount(USDC_TOKEN, 1000000);
+  const currencyAmount = CurrencyAmount.fromRawAmount(USDC_TOKEN, 20000000);
   const quoteCurrency = XLM_TOKEN;
 
   const routeExactIn = await router.route(
@@ -51,7 +51,7 @@ export const USDC_XLM = new Pair(
     TradeType.EXACT_INPUT
   );
 
-  console.log({ EXACT_IN: routeExactIn?.routeAmount?.route.path });
+  console.log(routeExactIn?.trade);
 
   const routeExactOut = await router.route(
     currencyAmount,
@@ -59,5 +59,5 @@ export const USDC_XLM = new Pair(
     TradeType.EXACT_OUTPUT
   );
 
-  console.log({ EXACT_OUT: routeExactOut?.routeAmount?.route.path });
+  console.log(routeExactOut?.trade);
 })();
