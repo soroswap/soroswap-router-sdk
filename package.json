@@ -1,18 +1,19 @@
 {
   "name": "soroswap-router-sdk",
-  "version": "1.0.11",
+  "version": "1.1.0",
   "repository": "https://github.com/soroswap/soroswap-router-sdk.git",
   "author": "abstract829 <maxxii.1820@gmail.com>",
   "scripts": {
-    "build": "tsc",
-    "start:example": "npx ts-node src/example.ts"
+    "build": "tsdx build"
   },
   "license": "GNU",
   "private": false,
   "files": [
-    "dist/"
+    "dist"
   ],
+  "module": "dist/soroswap-router-sdk.esm.js",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "dependencies": {
     "@ethersproject/address": "^5.7.0",
     "@ethersproject/logger": "^5.7.0",
@@ -33,6 +34,7 @@
     "@types/lodash": "^4.14.202",
     "@types/node": "^20.11.6",
     "ts-node": "^10.9.2",
+    "tsdx": "^0.14.1",
     "typescript": "^5.3.3"
   }
 }
