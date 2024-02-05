@@ -53,7 +53,7 @@ export class Pair {
   private readonly tokenAmounts: [CurrencyAmount<Token>, CurrencyAmount<Token>];
 
   public static getAddress(tokenA: Token, tokenB: Token): string {
-    return "0x00000";
+    return `${tokenA} - ${tokenB} pair`;
   }
 
   public constructor(

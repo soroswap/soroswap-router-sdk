@@ -1,5 +1,5 @@
 import JSBI from "jsbi";
-import { Percent } from "./entities";
+import { Percent } from "./entities/fractions/percent";
 
 export type BigintIsh = JSBI | string | number;
 

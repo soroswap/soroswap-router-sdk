@@ -1,4 +1,4 @@
-import { Currency, Token } from "../entities";
+import { Currency, Token, Pair, Route } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { PoolProvider } from "../providers/pool-provider";
 import {
@@ -11,8 +11,6 @@ import { BigNumber } from "@ethersproject/bignumber";
 import _ from "lodash";
 import { Logger } from "@ethersproject/logger";
 import { log } from "../utils/log";
-import { Pair } from "../entities/pair";
-import { Route } from "../entities/route";
 import JSBI from "jsbi";
 
 export type V2RouteWithValidQuote = {
@@ -26,12 +24,12 @@ export type V2RouteWithValidQuote = {
 } | null;
 
 export class Router {
-  private _chainId: number;
+  private _chainId: ChainId;
   private _poolProvider: PoolProvider;
   private _quoteProvider: QuoteProvider;
 
-  constructor(chainId: number) {
-    this._chainId = chainId;
+  constructor(chainId?: ChainId) {
+    this._chainId = chainId || ChainId.TESTNET;
     this._poolProvider = new PoolProvider();
     this._quoteProvider = new QuoteProvider();
   }
@@ -102,8 +100,9 @@ export class Router {
     tokenOut: Token,
     routes: V2Route[]
   ): Promise<V2RouteWithValidQuote> {
-    const { routesWithQuotes: quotesRaw } =
-      await this._quoteProvider.getQuotesManyExactIn([amountIn], routes);
+    const {
+      routesWithQuotes: quotesRaw,
+    } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes);
 
     const bestQuote = await this._getBestQuote(
       routes,
@@ -120,8 +119,9 @@ export class Router {
     tokenIn: Token,
     routes: V2Route[]
   ) {
-    const { routesWithQuotes: quotesRaw } =
-      await this._quoteProvider.getQuotesManyExactOut([amountOut], routes);
+    const {
+      routesWithQuotes: quotesRaw,
+    } = await this._quoteProvider.getQuotesManyExactOut([amountOut], routes);
 
     const bestQuote = await this._getBestQuote(
       routes,

@@ -1,10 +1,9 @@
 import { TradeType } from "../constants";
-import { Token } from "../entities";
+import { Token, Route } from "../entities";
 import {
   InsufficientInputAmountError,
   InsufficientReservesError,
 } from "../entities/pair";
-import { Route } from "../entities/route";
 import { CurrencyAmount } from "../utils/amounts";
 import { BigNumber } from "@ethersproject/bignumber";
 
