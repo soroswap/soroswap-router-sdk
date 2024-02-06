@@ -16,6 +16,8 @@ export enum Rounding {
 
 export enum ChainId {
   TESTNET = 1,
+  STANDALONE = 2,
+  FUTURENET = 3,
 }
 
 export const MaxUint256 = JSBI.BigInt(

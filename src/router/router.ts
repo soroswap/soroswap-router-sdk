@@ -1,16 +1,16 @@
-import { Currency, Token, Pair, Route } from "../entities";
-import { CurrencyAmount } from "../utils/amounts";
-import { PoolProvider } from "../providers/pool-provider";
+import _ from "lodash";
 import {
   QuoteProvider,
   V2Route,
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
-import { ChainId, TradeType } from "../constants";
 import { BigNumber } from "@ethersproject/bignumber";
-import _ from "lodash";
-import { Logger } from "@ethersproject/logger";
+import { ChainId, TradeType } from "../constants";
+import { Currency, Token, Pair, Route } from "../entities";
+import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
+import { Logger } from "@ethersproject/logger";
+import { PairProvider } from "../providers/pair-provider";
 import JSBI from "jsbi";
 
 export type V2RouteWithValidQuote = {
@@ -20,17 +20,21 @@ export type V2RouteWithValidQuote = {
   percent: number;
   tradeType: TradeType;
   quoteToken: Token;
-  poolProvider: PoolProvider;
+  pairProvider: PairProvider;
 } | null;
 
 export class Router {
   private _chainId: ChainId;
-  private _poolProvider: PoolProvider;
+  private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
 
-  constructor(chainId?: ChainId) {
+  constructor(backendUrl: string, backendApiKey: string, chainId?: ChainId) {
     this._chainId = chainId || ChainId.TESTNET;
-    this._poolProvider = new PoolProvider();
+    this._pairProvider = new PairProvider(
+      this._chainId,
+      backendUrl,
+      backendApiKey
+    );
     this._quoteProvider = new QuoteProvider();
   }
 
@@ -134,14 +138,12 @@ export class Router {
   }
 
   private async _getAllRoutes(tokenIn: Token, tokenOut: Token) {
-    const poolAccesor = await this._poolProvider.getPools();
-
-    const pools = poolAccesor.getAllPools();
+    const allPairs = await this._pairProvider.getAllPairs();
 
     const routes: V2Route[] = this._computeAllRoutes(
       tokenIn,
       tokenOut,
-      pools,
+      allPairs,
       this._chainId,
       [],
       [],
@@ -241,7 +243,7 @@ export class Router {
         percent: 100,
         tradeType: routeType,
         quoteToken,
-        poolProvider: this._poolProvider,
+        pairProvider: this._pairProvider,
       };
     });
 
