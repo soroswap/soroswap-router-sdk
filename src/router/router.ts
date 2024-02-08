@@ -28,12 +28,18 @@ export class Router {
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
 
-  constructor(backendUrl: string, backendApiKey: string, chainId?: ChainId) {
+  constructor(
+    backendUrl: string,
+    backendApiKey: string,
+    pairsCacheInSeconds?: number,
+    chainId?: ChainId
+  ) {
     this._chainId = chainId || ChainId.TESTNET;
     this._pairProvider = new PairProvider(
       this._chainId,
       backendUrl,
-      backendApiKey
+      backendApiKey,
+      pairsCacheInSeconds
     );
     this._quoteProvider = new QuoteProvider();
   }

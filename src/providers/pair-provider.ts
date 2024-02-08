@@ -18,15 +18,41 @@ export class PairProvider {
   private _chainId: ChainId;
   private _backendUrl: string;
   private _backendApiKey: string;
+  private _cache: {
+    [ChainId.TESTNET]: { pairs: Pair[]; timestamp: number };
+    [ChainId.STANDALONE]: { pairs: Pair[]; timestamp: number };
+    [ChainId.FUTURENET]: { pairs: Pair[]; timestamp: number };
+  };
+  private _cacheInSeconds: number;
 
-  constructor(chainId: ChainId, backendUrl: string, backendApiKey: string) {
+  constructor(
+    chainId: ChainId,
+    backendUrl: string,
+    backendApiKey: string,
+    cacheInSeconds: number = 20
+  ) {
     this._chainId = chainId;
     this._backendUrl = backendUrl;
     this._backendApiKey = backendApiKey;
+    this._cache = {
+      [ChainId.TESTNET]: { pairs: [], timestamp: 0 },
+      [ChainId.STANDALONE]: { pairs: [], timestamp: 0 },
+      [ChainId.FUTURENET]: { pairs: [], timestamp: 0 },
+    };
+    this._cacheInSeconds = cacheInSeconds;
   }
 
   public async getAllPairs(): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
+    const cache = this._cache[this._chainId];
+
+    const cacheDuration = this._cacheInSeconds * 1000;
+    const now = Date.now();
+
+    if (cache.pairs.length > 0 && now - cache.timestamp < cacheDuration) {
+      return cache.pairs;
+    }
+
     try {
       const response = await fetch(
         `${this._backendUrl}/pairs/all?network=${chainName}`,
@@ -52,6 +78,8 @@ export class PairProvider {
 
         return newPair;
       });
+
+      this._cache[this._chainId] = { pairs: allPairs, timestamp: Date.now() };
 
       return allPairs;
     } catch (error) {
