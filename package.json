@@ -4,7 +4,8 @@
   "repository": "https://github.com/soroswap/soroswap-router-sdk.git",
   "author": "abstract829 <maxxii.1820@gmail.com>",
   "scripts": {
-    "build": "tsdx build"
+    "build": "tsdx build",
+    "docs": "typedoc"
   },
   "license": "GNU",
   "private": false,
@@ -35,6 +36,7 @@
     "@types/node": "^20.11.6",
     "ts-node": "^10.9.2",
     "tsdx": "^0.14.1",
+    "typedoc": "^0.25.7",
     "typescript": "^5.3.3"
   }
 }

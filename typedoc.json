@@ -1,0 +1,11 @@
+{
+  "out": "./docs",
+  "name": "Soroswap router sdk",
+  "theme": "default",
+  "entryPoints": [
+    "src/router",
+    "src/providers/pair-provider.ts",
+    "src/providers/quote-provider.ts"
+  ],
+  "exclude": ["**/node_modules/**", "**/*.test.ts"]
+}

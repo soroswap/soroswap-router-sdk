@@ -13,6 +13,9 @@ import { Logger } from "@ethersproject/logger";
 import { PairProvider } from "../providers/pair-provider";
 import JSBI from "jsbi";
 
+/**
+ * Represents a route with a valid quote, including details like the raw quote amount, trade type, and the quote token.
+ */
 export type V2RouteWithValidQuote = {
   route: V2Route;
   rawQuote: BigNumber;
@@ -23,11 +26,39 @@ export type V2RouteWithValidQuote = {
   pairProvider: PairProvider;
 } | null;
 
+/**
+ * The Router class is the core of the soroswap-router-sdk, facilitating the discovery of optimal trade routes and quotes for token exchanges on a specified blockchain network. It leverages quote and pair providers to find the best exchange route based on the specified trade type, either exact input or exact output.
+ * ```ts
+ * const USDC = new Token(ChainId.TESTNET, USDC_ADDRESS, 7, "USDC", "USD Coin");
+ * const XLM = new Token(ChainId.TESTNET, XLM_ADDRESS, 7, "XLM", "Stellar Lumens");
+ * const amountCurrency = CurrencyAmount.fromRawAmount(USDC, "100000000");
+ * const quoteCurrency = XLM;
+ * const tradeType = TradeType.EXACT_INPUT;
+ *
+ * const router = new Router('https://my-backend.com/', 'my-api-key', 20, ChainId.TESTNET);
+ * const route = await router.route(amountCurrency, quoteCurrency, tradeType);
+ * console.log(route.trade.path);
+ * // Output: ['0x...', '0x...', '0x...']
+ * ```
+ */
 export class Router {
   private _chainId: ChainId;
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
 
+  /**
+   * Initializes a new instance of the Router with configurations for connecting to a specified backend and retrieving pair exchange information.
+   *
+   * Example:
+   * ```ts
+   * const router = new Router("http://localhost:4000", "my-api-key", 20, ChainId.TESTNET);
+   * ```
+   *
+   * @param backendUrl The backend URL used to fetch pair and quote information.
+   * @param backendApiKey The API key for authenticating with the backend.
+   * @param pairsCacheInSeconds (Optional) The time in seconds to cache pair data.
+   * @param chainId (Optional) The blockchain network ID to operate on. Defaults to TESTNET if not provided.
+   */
   constructor(
     backendUrl: string,
     backendApiKey: string,
@@ -44,6 +75,20 @@ export class Router {
     this._quoteProvider = new QuoteProvider();
   }
 
+  /**
+   * This is the main method and calculates the optimal route for a trade given the amount, quote currency, and trade type. Returns the trade route and details if successful; otherwise returns null.
+   *
+   * Example:
+   * ```ts
+   * const route = await router.route(amountCurrency, quoteCurrency, tradeType);
+   * ```
+   *
+   *
+   * @param amount The amount for the trade.
+   * @param quoteCurrency The currency to quote the trade in.
+   * @param tradeType The type of trade, either EXACT_INPUT or EXACT_OUTPUT.
+   * @returns The trade details including the route, or null if no route is found.
+   */
   public async route(
     amount: CurrencyAmount,
     quoteCurrency: Currency,
@@ -56,6 +101,22 @@ export class Router {
     }
   }
 
+  /**
+   * Finds the best route for an exact input amount given the input and output currencies and the input amount. Returns the trade details if successful.
+   *
+   *
+   * Example:
+   * ```ts
+   * if (tradeType === TradeType.EXACT_INPUT) {
+   *  const route = await router.routeExactIn(amountCurrency, quoteCurrency, amount);
+   * }
+   * ```
+   *
+   * @param currencyIn The input currency.
+   * @param currencyOut The output currency.
+   * @param amountIn The exact input amount.
+   * @returns The trade details for the best route, or null if no route is found.
+   */
   public async routeExactIn(
     currencyIn: Currency,
     currencyOut: Currency,
@@ -81,6 +142,21 @@ export class Router {
     );
   }
 
+  /**
+   * Finds the best route for an exact output amount given the input and output currencies and the output amount. Returns the trade details if successful.
+   *
+   * Example:
+   * ```ts
+   * if (tradeType === TradeType.EXACT_OUTPUT) {
+   * const route = await router.routeExactOut(amountCurrency, quoteCurrency, amount);
+   * }
+   * ```
+   *
+   * @param currencyIn The input currency.
+   * @param currencyOut The output currency.
+   * @param amountOut The exact output amount.
+   * @returns The trade details for the best route, or null if no route is found.
+   */
   public async routeExactOut(
     currencyIn: Currency,
     currencyOut: Currency,
@@ -105,6 +181,14 @@ export class Router {
     );
   }
 
+  /**
+   * Finds the best route for a given exact input amount by comparing all possible routes from tokenIn to tokenOut. It selects the route with the best quote.
+   *
+   * @param amountIn The exact amount of the input token.
+   * @param tokenOut The output token for the trade.
+   * @param routes An array of potential routes to evaluate.
+   * @returns A promise that resolves to the route with the best quote, or null if no suitable route is found.
+   */
   private async _findBestRouteExactIn(
     amountIn: CurrencyAmount,
     tokenOut: Token,
@@ -124,6 +208,14 @@ export class Router {
     return bestQuote;
   }
 
+  /**
+   * Finds the best route for a given exact output amount by comparing all possible routes from tokenIn to tokenOut. It selects the route with the best quote suitable for the required output amount.
+   *
+   * @param amountOut The desired output amount.
+   * @param tokenIn The input token for the trade.
+   * @param routes An array of potential routes to evaluate.
+   * @returns A promise that resolves to the route with the best quote, or null if no suitable route is found.
+   */
   private async _findBestRouteExactOut(
     amountOut: CurrencyAmount,
     tokenIn: Token,
@@ -143,6 +235,13 @@ export class Router {
     return bestQuote;
   }
 
+  /**
+   * Retrieves all possible routes between a given input and output token pair by exploring all combinations of pairs provided by the PairProvider.
+   *
+   * @param tokenIn The input token for generating routes.
+   * @param tokenOut The output token for generating routes.
+   * @returns A promise that resolves to an array of V2Route objects representing all possible routes.
+   */
   private async _getAllRoutes(tokenIn: Token, tokenOut: Token) {
     const allPairs = await this._pairProvider.getAllPairs();
 
@@ -160,6 +259,19 @@ export class Router {
     return routes;
   }
 
+  /**
+   * Recursively computes all routes from tokenIn to tokenOut using a depth-first search algorithm, considering a maximum number of hops.
+   *
+   * @param tokenIn The starting token for route computation.
+   * @param tokenOut The destination token for route computation.
+   * @param pairs An array of all available pairs to be considered for routing.
+   * @param chainId The ID of the blockchain network.
+   * @param currentPath The current path being explored (used for recursion).
+   * @param allPaths Accumulator for all valid paths found.
+   * @param startTokenIn The original input token (used for recursion).
+   * @param maxHops The maximum number of hops to consider.
+   * @returns An array of V2Route objects representing all computed routes.
+   */
   private _computeAllRoutes(
     tokenIn: Token,
     tokenOut: Token,
@@ -198,6 +310,15 @@ export class Router {
     return allPaths;
   }
 
+  /**
+   * Evaluates all provided routes with their corresponding quotes to determine the best quote based on the specified trade type (exact input or output).
+   *
+   * @param routes An array of potential routes to be evaluated.
+   * @param quotesRaw Raw quote data for each route.
+   * @param quoteToken The token for which the quote is provided.
+   * @param routeType The type of trade, determining how to compare quotes.
+   * @returns The best quote found for the given trade type, or null if no suitable quote is found.
+   */
   private async _getBestQuote(
     routes: V2Route[],
     quotesRaw: V2RouteWithQuotes[],
@@ -256,6 +377,15 @@ export class Router {
     return routeQuotes[0]!;
   }
 
+  /**
+   * Constructs a trade object from the provided route and amount details. This method finalizes the trade details, including calculating the minimum amount out for exact input trades, or maximum amount in for exact output trades.
+   *
+   * @param tokenInCurrency The currency of the input token.
+   * @param tokenOutCurrency The currency of the output token.
+   * @param tradeType The type of trade (EXACT_INPUT or EXACT_OUTPUT).
+   * @param routeAmount The selected route and amount details.
+   * @returns A trade object containing detailed information about the trade, or null if the routeAmount is null.
+   */
   private async _buildTrade(
     tokenInCurrency: Currency,
     tokenOutCurrency: Currency,

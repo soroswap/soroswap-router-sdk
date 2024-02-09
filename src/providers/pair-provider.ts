@@ -1,6 +1,10 @@
 import { ChainId } from "../constants";
 import { Token, Pair, CurrencyAmount } from "../entities";
 
+/**
+ * @ignore
+ * Represents a pair as returned from the API, including token addresses and reserves.
+ */
 export interface PairFromApi {
   token0: string;
   token1: string;
@@ -8,12 +12,23 @@ export interface PairFromApi {
   reserve1: string;
 }
 
+/**
+ * @ignore
+ * Maps ChainId to its corresponding network name.
+ */
 const chainIdToName = {
   [ChainId.TESTNET]: "testnet",
   [ChainId.STANDALONE]: "standalone",
   [ChainId.FUTURENET]: "futurenet",
 };
 
+/**
+ * Provides functionality to fetch and cache pairs from a backend API, based on the specified blockchain network.
+ *
+ * ```typescript
+ * const pairProvider = new PairProvider(ChainId.TESTNET, "https://api.example.com", "api-key", 20);
+ * ```
+ */
 export class PairProvider {
   private _chainId: ChainId;
   private _backendUrl: string;
@@ -25,6 +40,14 @@ export class PairProvider {
   };
   private _cacheInSeconds: number;
 
+  /**
+   * Initializes a new instance of the PairProvider.
+   *
+   * @param chainId The blockchain network ID to operate on.
+   * @param backendUrl The backend URL used to fetch pair information.
+   * @param backendApiKey The API key for authenticating with the backend.
+   * @param cacheInSeconds (Optional) The time in seconds to cache pair data, defaulting to 20 seconds.
+   */
   constructor(
     chainId: ChainId,
     backendUrl: string,
@@ -42,6 +65,11 @@ export class PairProvider {
     this._cacheInSeconds = cacheInSeconds;
   }
 
+  /**
+   * Fetches all pairs from the backend API, caching them to reduce API calls. If cached pairs are still valid, returns them instead of fetching anew.
+   *
+   * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
+   */
   public async getAllPairs(): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
     const cache = this._cache[this._chainId];
