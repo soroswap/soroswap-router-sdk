@@ -88,4 +88,74 @@ describe("Router", () => {
 
     expect(exactOutput?.trade.path).toEqual(["USDC_ADDRESS", "XLM_ADDRESS"]);
   });
+
+  it("Select Optimal Route for Exact Input Based on Reserve Ratios", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 1000, 1000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000, 100),
+        ]),
+    }));
+    //Should use xlm to dogstar to usdc, because 1 xlm = 1 dogstar and 1 dogstar = 10 usdc
+
+    const router = createRouter();
+
+    const route = await router.route(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route?.trade.path).toEqual([
+      "XLM_ADDRESS",
+      "DOGSTAR_ADDRESS",
+      "USDC_ADDRESS",
+    ]);
+  });
+
+  it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 10000, 10000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 10000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 10000, 10000),
+        ]),
+    }));
+    //Should use usdc to dogstar to xlm, because 1 usdc = 1 dogstar and 1 dogstar = 10 xlm
+
+    const router = createRouter();
+
+    const route = await router.route(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_OUTPUT
+    );
+
+    expect(route?.trade.path).toEqual([
+      "USDC_ADDRESS",
+      "DOGSTAR_ADDRESS",
+      "XLM_ADDRESS",
+    ]);
+  });
+
+  it("Handle Scenario With No Available Trading Pairs", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest.fn().mockResolvedValueOnce([]),
+    }));
+
+    const router = createRouter();
+
+    const route = await router.route(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route).toBeNull();
+  });
 });
