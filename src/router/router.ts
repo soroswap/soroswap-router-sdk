@@ -259,6 +259,10 @@ export class Router {
     return routes;
   }
 
+  public resetCache() {
+    this._pairProvider.resetCache();
+  }
+
   /**
    * Recursively computes all routes from tokenIn to tokenOut using a depth-first search algorithm, considering a maximum number of hops.
    *

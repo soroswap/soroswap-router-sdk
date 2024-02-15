@@ -115,4 +115,8 @@ export class PairProvider {
       return [];
     }
   }
+
+  public resetCache() {
+    this._cache[this._chainId] = { pairs: [], timestamp: 0 };
+  }
 }
