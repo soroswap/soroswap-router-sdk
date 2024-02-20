@@ -3,6 +3,7 @@ import {
   ChainId,
   CurrencyAmount,
   Pair,
+  Protocols,
   Router,
   Token,
   TradeType,
@@ -29,6 +30,7 @@ const createRouter = () => {
     "https://my-backend.com/",
     "my-api-key",
     20,
+    [Protocols.SOROSWAP],
     ChainId.TESTNET
   );
 };
