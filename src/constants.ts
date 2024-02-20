@@ -3,6 +3,11 @@ import { Percent } from "./entities/fractions/percent";
 
 export type BigintIsh = JSBI | string | number;
 
+export enum Protocols {
+  SOROSWAP = "soroswap",
+  PHOENIX = "phoenix",
+}
+
 export enum TradeType {
   EXACT_INPUT,
   EXACT_OUTPUT,

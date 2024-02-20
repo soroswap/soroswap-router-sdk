@@ -5,7 +5,7 @@ import {
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
 import { BigNumber } from "@ethersproject/bignumber";
-import { ChainId, TradeType } from "../constants";
+import { ChainId, Protocols, TradeType } from "../constants";
 import { Currency, Token, Pair, Route } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
@@ -63,6 +63,7 @@ export class Router {
     backendUrl: string,
     backendApiKey: string,
     pairsCacheInSeconds?: number,
+    protocols?: Protocols[],
     chainId?: ChainId
   ) {
     this._chainId = chainId || ChainId.TESTNET;
@@ -70,6 +71,7 @@ export class Router {
       this._chainId,
       backendUrl,
       backendApiKey,
+      protocols,
       pairsCacheInSeconds
     );
     this._quoteProvider = new QuoteProvider();

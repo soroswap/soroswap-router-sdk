@@ -1,4 +1,4 @@
-import { ChainId } from "../constants";
+import { ChainId, Protocols } from "../constants";
 import { Token, Pair, CurrencyAmount } from "../entities";
 
 /**
@@ -39,7 +39,7 @@ export class PairProvider {
     [ChainId.FUTURENET]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
-
+  private _protocols: Protocols[];
   /**
    * Initializes a new instance of the PairProvider.
    *
@@ -52,6 +52,7 @@ export class PairProvider {
     chainId: ChainId,
     backendUrl: string,
     backendApiKey: string,
+    protocols?: Protocols[],
     cacheInSeconds: number = 20
   ) {
     this._chainId = chainId;
@@ -63,6 +64,7 @@ export class PairProvider {
       [ChainId.FUTURENET]: { pairs: [], timestamp: 0 },
     };
     this._cacheInSeconds = cacheInSeconds;
+    this._protocols = protocols || [Protocols.SOROSWAP];
   }
 
   /**
@@ -82,16 +84,19 @@ export class PairProvider {
     }
 
     try {
-      const response = await fetch(
-        `${this._backendUrl}/pairs/all?network=${chainName}`,
-        {
-          method: "POST",
-          headers: {
-            apiKey: this._backendApiKey,
-            "Content-Type": "application/json",
-          },
-        }
+      let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}`;
+
+      this._protocols.forEach(
+        (protocol) => (endpointUrl += `&protocols=${protocol}`)
       );
+
+      const response = await fetch(endpointUrl, {
+        method: "POST",
+        headers: {
+          apiKey: this._backendApiKey,
+          "Content-Type": "application/json",
+        },
+      });
 
       const apiPairs: PairFromApi[] = await response.json();
 
