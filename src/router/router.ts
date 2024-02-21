@@ -13,6 +13,20 @@ import { Logger } from "@ethersproject/logger";
 import { PairProvider } from "../providers/pair-provider";
 import JSBI from "jsbi";
 
+export interface BuildTradeReturn {
+  amountCurrency: CurrencyAmount;
+  quoteCurrency: CurrencyAmount;
+  tradeType: TradeType;
+  routeCurrency: Route<Currency, Currency>;
+  trade: {
+    amountIn?: string;
+    amountOut?: string;
+    amountOutMin?: string;
+    amountInMax?: string;
+    path: string[];
+  };
+}
+
 /**
  * Represents a route with a valid quote, including details like the raw quote amount, trade type, and the quote token.
  */
@@ -45,6 +59,7 @@ export class Router {
   private _chainId: ChainId;
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
+  private _protocols: Protocols[];
 
   /**
    * Initializes a new instance of the Router with configurations for connecting to a specified backend and retrieving pair exchange information.
@@ -71,10 +86,10 @@ export class Router {
       this._chainId,
       backendUrl,
       backendApiKey,
-      protocols,
       pairsCacheInSeconds
     );
     this._quoteProvider = new QuoteProvider();
+    this._protocols = protocols || [Protocols.SOROSWAP];
   }
 
   /**
@@ -97,9 +112,76 @@ export class Router {
     tradeType: TradeType
   ) {
     if (tradeType === TradeType.EXACT_INPUT) {
-      return this.routeExactIn(amount.currency, quoteCurrency, amount);
+      return this.routeExactIn(
+        amount.currency,
+        quoteCurrency,
+        amount,
+        this._protocols
+      );
     } else {
-      return this.routeExactOut(quoteCurrency, amount.currency, amount);
+      return this.routeExactOut(
+        quoteCurrency,
+        amount.currency,
+        amount,
+        this._protocols
+      );
+    }
+  }
+
+  /** Uses multiple protocols and calculates the optimal route for a trade given the amount, quote currency, and trade type. Returns the trade route and details if successful; otherwise returns null.
+   *
+   * Example:
+   * ```ts
+   * const route = await router.routeSplittingProtocols(amountCurrency, quoteCurrency, tradeType);
+   * ```
+   *
+   * @param amount The amount for the trade.
+   * @param quoteCurrency The currency to quote the trade in.
+   * @param tradeType The type of trade, either EXACT_INPUT or EXACT_OUTPUT.
+   * @returns The trade details including the route in each protocol, or null if no route is found.
+   * */
+
+  public async routeSplittingProtocols(
+    amount: CurrencyAmount,
+    quoteCurrency: Currency,
+    tradeType: TradeType
+  ) {
+    if (tradeType === TradeType.EXACT_INPUT) {
+      const totalProtocols = this._protocols.length;
+
+      const amountPerProtocol = amount.divide(totalProtocols);
+
+      const partsPerProtocol = 10 / totalProtocols;
+
+      const routes = await Promise.all(
+        this._protocols.map(async (protocol) => {
+          const route = await this.routeExactIn(
+            amount.currency,
+            quoteCurrency,
+            amountPerProtocol,
+            [protocol]
+          );
+
+          return {
+            protocol,
+            trade: route?.trade,
+            parts: partsPerProtocol,
+          };
+        })
+      );
+
+      const aggregatedAmountOutMin = routes.reduce(
+        (acc, route) => acc + Number(route.trade?.amountOutMin),
+        0
+      );
+
+      return {
+        distribution: routes,
+        amountIn: amount.asFraction.toFixed(0),
+        amountOutMin: aggregatedAmountOutMin,
+      };
+    } else {
+      return null;
     }
   }
 
@@ -122,11 +204,12 @@ export class Router {
   public async routeExactIn(
     currencyIn: Currency,
     currencyOut: Currency,
-    amountIn: CurrencyAmount
+    amountIn: CurrencyAmount,
+    protocols: Protocols[]
   ) {
     const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
-    const routes = await this._getAllRoutes(tokenIn, tokenOut);
+    const routes = await this._getAllRoutes(tokenIn, tokenOut, protocols);
 
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
@@ -162,11 +245,14 @@ export class Router {
   public async routeExactOut(
     currencyIn: Currency,
     currencyOut: Currency,
-    amountOut: CurrencyAmount
+    amountOut: CurrencyAmount,
+    protocols: Protocols[]
   ) {
     const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
-    const routes = await this._getAllRoutes(tokenIn, tokenOut);
+
+    const routes = await this._getAllRoutes(tokenIn, tokenOut, protocols);
+
     const routeQuote = await this._findBestRouteExactOut(
       amountOut,
       tokenIn,
@@ -244,8 +330,12 @@ export class Router {
    * @param tokenOut The output token for generating routes.
    * @returns A promise that resolves to an array of V2Route objects representing all possible routes.
    */
-  private async _getAllRoutes(tokenIn: Token, tokenOut: Token) {
-    const allPairs = await this._pairProvider.getAllPairs();
+  private async _getAllRoutes(
+    tokenIn: Token,
+    tokenOut: Token,
+    protocols: Protocols[]
+  ) {
+    const allPairs = await this._pairProvider.getAllPairs(protocols);
 
     const routes: V2Route[] = this._computeAllRoutes(
       tokenIn,
@@ -397,7 +487,7 @@ export class Router {
     tokenOutCurrency: Currency,
     tradeType: TradeType,
     routeAmount: V2RouteWithValidQuote
-  ) {
+  ): Promise<BuildTradeReturn | null> {
     if (!routeAmount) return null;
 
     const { route, amount, rawQuote, quoteToken } = routeAmount;

@@ -39,7 +39,6 @@ export class PairProvider {
     [ChainId.FUTURENET]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
-  private _protocols: Protocols[];
   /**
    * Initializes a new instance of the PairProvider.
    *
@@ -52,7 +51,6 @@ export class PairProvider {
     chainId: ChainId,
     backendUrl: string,
     backendApiKey: string,
-    protocols?: Protocols[],
     cacheInSeconds: number = 20
   ) {
     this._chainId = chainId;
@@ -64,7 +62,6 @@ export class PairProvider {
       [ChainId.FUTURENET]: { pairs: [], timestamp: 0 },
     };
     this._cacheInSeconds = cacheInSeconds;
-    this._protocols = protocols || [Protocols.SOROSWAP];
   }
 
   /**
@@ -72,7 +69,9 @@ export class PairProvider {
    *
    * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
    */
-  public async getAllPairs(): Promise<Pair[]> {
+  public async getAllPairs(
+    protocols: Protocols[] = [Protocols.SOROSWAP]
+  ): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
     const cache = this._cache[this._chainId];
 
@@ -86,7 +85,7 @@ export class PairProvider {
     try {
       let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}`;
 
-      this._protocols.forEach(
+      protocols.forEach(
         (protocol) => (endpointUrl += `&protocols=${protocol}`)
       );
 
@@ -116,7 +115,7 @@ export class PairProvider {
 
       return allPairs;
     } catch (error) {
-      console.error("Error fetching pairs from API");
+      console.error("Error fetching pairs from API", error);
       return [];
     }
   }
