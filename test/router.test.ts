@@ -25,12 +25,12 @@ const createPair = (
   );
 };
 
-const createRouter = () => {
+const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
   return new Router(
     "https://my-backend.com/",
     "my-api-key",
     20,
-    [Protocols.SOROSWAP],
+    protocols,
     ChainId.TESTNET
   );
 };
@@ -159,5 +159,28 @@ describe("Router", () => {
     );
 
     expect(route).toBeNull();
+  });
+
+  it("Should Split Distribution When Using Splitting Protocols", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 1000, 1000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000, 100),
+        ]),
+    }));
+
+    const router = createRouter([Protocols.SOROSWAP, Protocols.PHOENIX]);
+
+    const route = await router.routeSplittingProtocols(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route.distribution).toHaveLength(2);
+    expect(route.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
   });
 });

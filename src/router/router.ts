@@ -146,13 +146,11 @@ export class Router {
     quoteCurrency: Currency,
     tradeType: TradeType
   ) {
+    const totalProtocols = this._protocols.length;
+    const amountPerProtocol = amount.divide(totalProtocols);
+    const partsPerProtocol = 10 / totalProtocols;
+
     if (tradeType === TradeType.EXACT_INPUT) {
-      const totalProtocols = this._protocols.length;
-
-      const amountPerProtocol = amount.divide(totalProtocols);
-
-      const partsPerProtocol = 10 / totalProtocols;
-
       const routes = await Promise.all(
         this._protocols.map(async (protocol) => {
           const route = await this.routeExactIn(
@@ -181,7 +179,33 @@ export class Router {
         amountOutMin: aggregatedAmountOutMin,
       };
     } else {
-      return null;
+      const routes = await Promise.all(
+        this._protocols.map(async (protocol) => {
+          const route = await this.routeExactOut(
+            quoteCurrency,
+            amount.currency,
+            amountPerProtocol,
+            [protocol]
+          );
+
+          return {
+            protocol,
+            trade: route?.trade,
+            parts: partsPerProtocol,
+          };
+        })
+      );
+
+      const aggregatedAmountInMax = routes.reduce(
+        (acc, route) => acc + Number(route.trade?.amountInMax),
+        0
+      );
+
+      return {
+        distribution: routes,
+        amountOut: amount.asFraction.toFixed(0),
+        amountInMax: aggregatedAmountInMax,
+      };
     }
   }
 
