@@ -161,7 +161,40 @@ describe("Router", () => {
     expect(route).toBeNull();
   });
 
-  it("Should Split Distribution When Using Splitting Protocols", async () => {
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocols For Exact Output", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 10000, 10000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 10000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 10000, 10000),
+        ]),
+    }));
+
+    const router = createRouter([Protocols.SOROSWAP, Protocols.PHOENIX]);
+
+    const route = await router.routeSplittingProtocols(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_OUTPUT
+    );
+
+    expect(route.distribution).toHaveLength(2);
+    expect(route.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+
+    expect(
+      route.distribution.forEach((d) => {
+        expect(d.trade?.path).toEqual([
+          "USDC_ADDRESS",
+          "DOGSTAR_ADDRESS",
+          "XLM_ADDRESS",
+        ]);
+      })
+    );
+  });
+
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocols For Exact Input", async () => {
     PairProvider.mockImplementation(() => ({
       getAllPairs: jest
         .fn()
@@ -182,5 +215,31 @@ describe("Router", () => {
 
     expect(route.distribution).toHaveLength(2);
     expect(route.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+
+    expect(
+      route.distribution.forEach((d) => {
+        expect(d.trade?.path).toEqual([
+          "XLM_ADDRESS",
+          "DOGSTAR_ADDRESS",
+          "USDC_ADDRESS",
+        ]);
+      })
+    );
+  });
+
+  it("Handle Scenario With No Available Trading Pairs When Using Split Protocols", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest.fn().mockResolvedValueOnce([]),
+    }));
+
+    const router = createRouter();
+
+    const route = await router.routeSplittingProtocols(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route).toBeNull();
   });
 });

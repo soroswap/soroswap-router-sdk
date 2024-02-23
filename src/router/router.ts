@@ -173,6 +173,8 @@ export class Router {
         0
       );
 
+      if (!aggregatedAmountOutMin) return null;
+
       return {
         distribution: routes,
         amountIn: amount.asFraction.toFixed(0),
@@ -200,6 +202,8 @@ export class Router {
         (acc, route) => acc + Number(route.trade?.amountInMax),
         0
       );
+
+      if (!aggregatedAmountInMax) return null;
 
       return {
         distribution: routes,
