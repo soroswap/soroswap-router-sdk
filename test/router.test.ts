@@ -25,12 +25,12 @@ const createPair = (
   );
 };
 
-const createRouter = () => {
+const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
   return new Router(
     "https://my-backend.com/",
     "my-api-key",
     20,
-    [Protocols.SOROSWAP],
+    protocols,
     ChainId.TESTNET
   );
 };
@@ -153,6 +153,88 @@ describe("Router", () => {
     const router = createRouter();
 
     const route = await router.route(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route).toBeNull();
+  });
+
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocols For Exact Output", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 10000, 10000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 10000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 10000, 10000),
+        ]),
+    }));
+
+    const router = createRouter([Protocols.SOROSWAP, Protocols.PHOENIX]);
+
+    const route = await router.routeSplittingProtocols(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_OUTPUT
+    );
+
+    expect(route?.distribution).toHaveLength(2);
+    expect(route?.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+
+    expect(
+      route?.distribution.forEach((d) => {
+        expect(d.trade?.path).toEqual([
+          "USDC_ADDRESS",
+          "DOGSTAR_ADDRESS",
+          "XLM_ADDRESS",
+        ]);
+      })
+    );
+  });
+
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocols For Exact Input", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest
+        .fn()
+        .mockResolvedValue([
+          createPair(XLM_TOKEN, USDC_TOKEN, 1000, 1000),
+          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000, 1000),
+          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000, 100),
+        ]),
+    }));
+
+    const router = createRouter([Protocols.SOROSWAP, Protocols.PHOENIX]);
+
+    const route = await router.routeSplittingProtocols(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT
+    );
+
+    expect(route?.distribution).toHaveLength(2);
+    expect(route?.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+
+    expect(
+      route?.distribution.forEach((d) => {
+        expect(d.trade?.path).toEqual([
+          "XLM_ADDRESS",
+          "DOGSTAR_ADDRESS",
+          "USDC_ADDRESS",
+        ]);
+      })
+    );
+  });
+
+  it("Handle Scenario With No Available Trading Pairs When Using Split Protocols", async () => {
+    PairProvider.mockImplementation(() => ({
+      getAllPairs: jest.fn().mockResolvedValueOnce([]),
+    }));
+
+    const router = createRouter();
+
+    const route = await router.routeSplittingProtocols(
       amountCurrency,
       quoteCurrency,
       TradeType.EXACT_INPUT
