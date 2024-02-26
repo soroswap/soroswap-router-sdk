@@ -34,9 +34,7 @@ export class PairProvider {
   private _backendUrl: string;
   private _backendApiKey: string;
   private _cache: {
-    [ChainId.TESTNET]: { pairs: Pair[]; timestamp: number };
-    [ChainId.STANDALONE]: { pairs: Pair[]; timestamp: number };
-    [ChainId.FUTURENET]: { pairs: Pair[]; timestamp: number };
+    [x: string]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
   /**
@@ -56,12 +54,8 @@ export class PairProvider {
     this._chainId = chainId;
     this._backendUrl = backendUrl;
     this._backendApiKey = backendApiKey;
-    this._cache = {
-      [ChainId.TESTNET]: { pairs: [], timestamp: 0 },
-      [ChainId.STANDALONE]: { pairs: [], timestamp: 0 },
-      [ChainId.FUTURENET]: { pairs: [], timestamp: 0 },
-    };
     this._cacheInSeconds = cacheInSeconds;
+    this._cache = {};
   }
 
   /**
@@ -73,7 +67,16 @@ export class PairProvider {
     protocols: Protocols[] = [Protocols.SOROSWAP]
   ): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
-    const cache = this._cache[this._chainId];
+
+    const sortedProtocols = protocols.sort();
+    const aggProtocols = sortedProtocols.reduce(
+      (acc, protocol) => acc + `&protocols=${protocol}`,
+      ""
+    );
+
+    const cachekey = `${this._chainId}-${aggProtocols}`;
+
+    const cache = this._cache?.[cachekey];
 
     const cacheDuration = this._cacheInSeconds * 1000;
     const now = Date.now();
@@ -83,11 +86,7 @@ export class PairProvider {
     }
 
     try {
-      let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}`;
-
-      protocols.forEach(
-        (protocol) => (endpointUrl += `&protocols=${protocol}`)
-      );
+      let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
 
       const response = await fetch(endpointUrl, {
         method: "POST",
@@ -121,6 +120,6 @@ export class PairProvider {
   }
 
   public resetCache() {
-    this._cache[this._chainId] = { pairs: [], timestamp: 0 };
+    this._cache = {};
   }
 }

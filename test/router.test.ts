@@ -180,11 +180,11 @@ describe("Router", () => {
       TradeType.EXACT_OUTPUT
     );
 
-    expect(route.distribution).toHaveLength(2);
-    expect(route.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+    expect(route?.distribution).toHaveLength(2);
+    expect(route?.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
 
     expect(
-      route.distribution.forEach((d) => {
+      route?.distribution.forEach((d) => {
         expect(d.trade?.path).toEqual([
           "USDC_ADDRESS",
           "DOGSTAR_ADDRESS",
@@ -213,11 +213,11 @@ describe("Router", () => {
       TradeType.EXACT_INPUT
     );
 
-    expect(route.distribution).toHaveLength(2);
-    expect(route.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
+    expect(route?.distribution).toHaveLength(2);
+    expect(route?.distribution.map((d) => d.parts)).toEqual([5, 5]); // 50% each protocol
 
     expect(
-      route.distribution.forEach((d) => {
+      route?.distribution.forEach((d) => {
         expect(d.trade?.path).toEqual([
           "XLM_ADDRESS",
           "DOGSTAR_ADDRESS",
