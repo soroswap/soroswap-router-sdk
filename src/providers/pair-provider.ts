@@ -214,22 +214,27 @@ export class PairProvider {
   ): Promise<Pair[] | null> {
     if (this._chainId === ChainId.TESTNET) {
       try {
-        return this.getPairsFromBackend(protocols);
+        const pairs = await this.getPairsFromBackend(protocols);
+        return pairs;
       } catch (error) {
-        return this.getPairFromBlockchain(
+        const pairs = await this.getPairFromBlockchain(
           address0,
           address1,
           factoryAddress,
           sorobanContext
         );
+
+        return pairs;
       }
     } else {
-      return this.getPairFromBlockchain(
+      const pairs = await this.getPairFromBlockchain(
         address0,
         address1,
         factoryAddress,
         sorobanContext
       );
+
+      return pairs;
     }
   }
 
