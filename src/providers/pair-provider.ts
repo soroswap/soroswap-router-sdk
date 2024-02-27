@@ -214,6 +214,18 @@ export class PairProvider {
   ): Promise<Pair[] | null> {
     if (this._chainId === ChainId.TESTNET) {
       try {
+        const cacheKey = `${this._chainId}/${address0}/${address1}/${factoryAddress}`;
+
+        const cacheDuration = this._cacheInSeconds * 1000;
+
+        const now = Date.now();
+
+        const cache = this._cache?.[cacheKey];
+
+        if (cache && now - cache.timestamp < cacheDuration) {
+          return cache?.pairs;
+        }
+
         const pairs = await this.getPairsFromBackend(protocols);
         return pairs;
       } catch (error) {
