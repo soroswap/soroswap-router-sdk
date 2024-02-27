@@ -11,6 +11,7 @@ import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
 import { Logger } from "@ethersproject/logger";
 import { PairProvider } from "../providers/pair-provider";
+import { SorobanContextType } from "@soroban-react/core";
 import JSBI from "jsbi";
 
 export interface BuildTradeReturn {
@@ -109,21 +110,27 @@ export class Router {
   public async route(
     amount: CurrencyAmount,
     quoteCurrency: Currency,
-    tradeType: TradeType
+    tradeType: TradeType,
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
   ) {
     if (tradeType === TradeType.EXACT_INPUT) {
       return this.routeExactIn(
         amount.currency,
         quoteCurrency,
         amount,
-        this._protocols
+        this._protocols,
+        factoryAddress,
+        sorobanContext
       );
     } else {
       return this.routeExactOut(
         quoteCurrency,
         amount.currency,
         amount,
-        this._protocols
+        this._protocols,
+        factoryAddress,
+        sorobanContext
       );
     }
   }
@@ -233,11 +240,19 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountIn: CurrencyAmount,
-    protocols: Protocols[]
+    protocols: Protocols[],
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
   ) {
     const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
-    const routes = await this._getAllRoutes(tokenIn, tokenOut, protocols);
+    const routes = await this._getAllRoutes(
+      tokenIn,
+      tokenOut,
+      protocols,
+      factoryAddress,
+      sorobanContext
+    );
 
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
@@ -274,12 +289,20 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountOut: CurrencyAmount,
-    protocols: Protocols[]
+    protocols: Protocols[],
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
   ) {
     const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
 
-    const routes = await this._getAllRoutes(tokenIn, tokenOut, protocols);
+    const routes = await this._getAllRoutes(
+      tokenIn,
+      tokenOut,
+      protocols,
+      factoryAddress,
+      sorobanContext
+    );
 
     const routeQuote = await this._findBestRouteExactOut(
       amountOut,
@@ -361,9 +384,19 @@ export class Router {
   private async _getAllRoutes(
     tokenIn: Token,
     tokenOut: Token,
-    protocols: Protocols[]
+    protocols: Protocols[],
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
   ) {
-    const allPairs = await this._pairProvider.getAllPairs(protocols);
+    const allPairs = await this._pairProvider.getAllPairs(
+      tokenIn.address,
+      tokenOut.address,
+      factoryAddress,
+      sorobanContext,
+      protocols
+    );
+
+    if (!allPairs) return [];
 
     const routes: V2Route[] = this._computeAllRoutes(
       tokenIn,

@@ -1,5 +1,9 @@
+import { addressToScVal, scValToJs } from "../helpers/convert";
 import { ChainId, Protocols } from "../constants";
+import { contractInvoke } from "@soroban-react/contracts";
+import { SorobanContextType } from "@soroban-react/core";
 import { Token, Pair, CurrencyAmount } from "../entities";
+import { xdr } from "stellar-sdk";
 
 /**
  * @ignore
@@ -16,7 +20,7 @@ export interface PairFromApi {
  * @ignore
  * Maps ChainId to its corresponding network name.
  */
-const chainIdToName = {
+export const chainIdToName = {
   [ChainId.TESTNET]: "testnet",
   [ChainId.STANDALONE]: "standalone",
   [ChainId.FUTURENET]: "futurenet",
@@ -63,7 +67,7 @@ export class PairProvider {
    *
    * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
    */
-  public async getAllPairs(
+  public async getPairsFromBackend(
     protocols: Protocols[] = [Protocols.SOROSWAP]
   ): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
@@ -74,7 +78,7 @@ export class PairProvider {
       ""
     );
 
-    const cachekey = `${this._chainId}-${aggProtocols}`;
+    const cachekey = `${this._chainId}/${aggProtocols}`;
 
     const cache = this._cache?.[cachekey];
 
@@ -85,37 +89,147 @@ export class PairProvider {
       return cache.pairs;
     }
 
+    let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
+
+    const response = await fetch(endpointUrl, {
+      method: "POST",
+      headers: {
+        apiKey: this._backendApiKey,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const apiPairs: PairFromApi[] = await response.json();
+
+    const allPairs = apiPairs.map((pair) => {
+      const token0 = new Token(this._chainId, pair.token0, 7);
+      const token1 = new Token(this._chainId, pair.token1, 7);
+
+      const newPair = new Pair(
+        CurrencyAmount.fromRawAmount(token0, pair.reserve0),
+        CurrencyAmount.fromRawAmount(token1, pair.reserve1)
+      );
+
+      return newPair;
+    });
+
+    this._cache[cachekey] = { pairs: allPairs, timestamp: Date.now() };
+
+    return allPairs;
+  }
+
+  /**
+   *
+   * Fetches a pair from the blockchain, caching it to reduce API calls. If cached pair is still valid, returns it instead of fetching anew.
+   *
+   * @param address0
+   * @param address1
+   * @param factoryAddress
+   * @param sorobanContext
+   * @returns
+   */
+  public async getPairFromBlockchain(
+    address0: string,
+    address1: string,
+    factoryAddress: string | undefined,
+    sorobanContext: SorobanContextType | undefined
+  ): Promise<Pair[] | null> {
+    if (!factoryAddress || !sorobanContext) return null;
+
+    const cacheKey = `${this._chainId}/${address0}/${address1}`;
+
+    const cacheDuration = this._cacheInSeconds * 1000;
+
+    const now = Date.now();
+
+    const cache = this._cache?.[cacheKey];
+
+    if (cache && now - cache.timestamp < cacheDuration) {
+      return cache.pairs;
+    }
+
     try {
-      let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
-
-      const response = await fetch(endpointUrl, {
-        method: "POST",
-        headers: {
-          apiKey: this._backendApiKey,
-          "Content-Type": "application/json",
-        },
+      const response = await contractInvoke({
+        contractAddress: factoryAddress,
+        method: "get_pair",
+        args: [addressToScVal(address0), addressToScVal(address1)],
+        sorobanContext,
       });
 
-      const apiPairs: PairFromApi[] = await response.json();
+      const pairAddress = scValToJs(response as xdr.ScVal) as string;
 
-      const allPairs = apiPairs.map((pair) => {
-        const token0 = new Token(this._chainId, pair.token0, 7);
-        const token1 = new Token(this._chainId, pair.token1, 7);
+      if (!pairAddress) return null;
 
-        const newPair = new Pair(
-          CurrencyAmount.fromRawAmount(token0, pair.reserve0),
-          CurrencyAmount.fromRawAmount(token1, pair.reserve1)
-        );
-
-        return newPair;
+      const reserves_scval = await contractInvoke({
+        contractAddress: pairAddress,
+        method: "get_reserves",
+        args: [],
+        sorobanContext,
       });
 
-      this._cache[this._chainId] = { pairs: allPairs, timestamp: Date.now() };
+      const reserves: string = scValToJs(reserves_scval as xdr.ScVal);
 
-      return allPairs;
+      const reserve0 = reserves[0];
+      const reserve1 = reserves[1];
+
+      const token0_scval = await contractInvoke({
+        contractAddress: pairAddress,
+        method: "token_0",
+        args: [],
+        sorobanContext,
+      });
+
+      const token0String: string = scValToJs(token0_scval as xdr.ScVal);
+
+      const token1_scval = await contractInvoke({
+        contractAddress: pairAddress,
+        method: "token_1",
+        args: [],
+        sorobanContext,
+      });
+      const token1String: string = scValToJs(token1_scval as xdr.ScVal);
+
+      const token0 = new Token(this._chainId, token0String, 7);
+      const token1 = new Token(this._chainId, token1String, 7);
+
+      const pair = new Pair(
+        CurrencyAmount.fromRawAmount(token0, reserve0?.toString() || "0"),
+        CurrencyAmount.fromRawAmount(token1, reserve1?.toString() || "0")
+      );
+
+      this._cache[cacheKey] = { pairs: [pair], timestamp: Date.now() };
+
+      return [pair];
     } catch (error) {
-      console.error("Error fetching pairs from API", error);
-      return [];
+      return null;
+    }
+  }
+
+  public async getAllPairs(
+    address0: string,
+    address1: string,
+    factoryAddress: string | undefined,
+    sorobanContext: SorobanContextType | undefined,
+    protocols: Protocols[]
+  ): Promise<Pair[] | null> {
+    if (this._chainId === ChainId.TESTNET) {
+      try {
+        return this.getPairsFromBackend(protocols);
+      } catch (error) {
+        return this.getPairFromBlockchain(
+          address0,
+          address1,
+          factoryAddress,
+          sorobanContext
+        );
+      }
+    } else {
+      return this.getPairFromBlockchain(
+        address0,
+        address1,
+        factoryAddress,
+        sorobanContext
+      );
     }
   }
 
