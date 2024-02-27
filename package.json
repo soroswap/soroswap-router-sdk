@@ -1,6 +1,6 @@
 {
   "name": "soroswap-router-sdk",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "repository": "https://github.com/soroswap/soroswap-router-sdk.git",
   "author": "abstract829 <maxxii.1820@gmail.com>",
   "scripts": {
