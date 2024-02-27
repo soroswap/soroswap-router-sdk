@@ -1,7 +1,7 @@
-import { Address, xdr } from 'stellar-sdk';
-import { Buffer } from 'buffer';
-import { bufToBigint } from 'bigint-conversion';
-import { I128 } from './xdr';
+import { Address, xdr } from "stellar-sdk";
+import { Buffer } from "buffer";
+import { bufToBigint } from "bigint-conversion";
+import { I128 } from "./xdr";
 
 export const decodei128ScVal = (value: any) => {
   try {
@@ -30,28 +30,23 @@ export function scvalToBigInt(scval: xdr.ScVal | undefined): BigInt {
       return bufToBigint(new Int32Array([high, low]));
     }
     case xdr.ScValType.scvU128(): {
-      const parts = scval.u128();
-      const a = parts.hi();
-      const b = parts.lo();
       return decodei128ScVal(scval);
       // return bufToBigint(new Uint32Array([a.high, a.low, b.high, b.low]));
     }
     case xdr.ScValType.scvI128(): {
-      const parts = scval.i128();
-      const a = parts.hi();
-      const b = parts.lo();
-
       return decodei128ScVal(scval);
       // return bufToBigint(new Int32Array([a.high, a.low, b.high, b.low]));
     }
     default: {
-      throw new Error(`Invalid type for scvalToBigInt: ${scval?.switch().name}`);
+      throw new Error(
+        `Invalid type for scvalToBigInt: ${scval?.switch().name}`
+      );
     }
   }
 }
 
 export function strToScVal(base64Xdr: string): xdr.ScVal {
-  return xdr.ScVal.fromXDR(Buffer.from(base64Xdr, 'base64'));
+  return xdr.ScVal.fromXDR(Buffer.from(base64Xdr, "base64"));
 }
 
 export function scValStrToJs<T>(base64Xdr: string): T {
@@ -61,17 +56,17 @@ export function scValStrToJs<T>(base64Xdr: string): T {
 export function scValToJs<T>(val: xdr.ScVal): T {
   switch (val?.switch()) {
     case xdr.ScValType.scvBool(): {
-      return val.b() as unknown as T;
+      return (val.b() as unknown) as T;
     }
     case xdr.ScValType.scvVoid():
     case undefined: {
-      return 0 as unknown as T;
+      return (0 as unknown) as T;
     }
     case xdr.ScValType.scvU32(): {
-      return val.u32() as unknown as T;
+      return (val.u32() as unknown) as T;
     }
     case xdr.ScValType.scvI32(): {
-      return val.i32() as unknown as T;
+      return (val.i32() as unknown) as T;
     }
     case xdr.ScValType.scvU64():
     case xdr.ScValType.scvI64():
@@ -79,23 +74,23 @@ export function scValToJs<T>(val: xdr.ScVal): T {
     case xdr.ScValType.scvI128():
     case xdr.ScValType.scvU256():
     case xdr.ScValType.scvI256(): {
-      return scvalToBigInt(val) as unknown as T;
+      return (scvalToBigInt(val) as unknown) as T;
     }
     case xdr.ScValType.scvAddress(): {
-      return Address.fromScVal(val).toString() as unknown as T;
+      return (Address.fromScVal(val).toString() as unknown) as T;
     }
     case xdr.ScValType.scvString(): {
-      return val.str().toString() as unknown as T;
+      return (val.str().toString() as unknown) as T;
     }
     case xdr.ScValType.scvSymbol(): {
-      return val.sym().toString() as unknown as T;
+      return (val.sym().toString() as unknown) as T;
     }
     case xdr.ScValType.scvBytes(): {
-      return val.bytes() as unknown as T;
+      return (val.bytes() as unknown) as T;
     }
     case xdr.ScValType.scvVec(): {
       type Element = ElementType<T>;
-      return val?.vec()?.map((v) => scValToJs<Element>(v)) as unknown as T;
+      return (val?.vec()?.map((v) => scValToJs<Element>(v)) as unknown) as T;
     }
     case xdr.ScValType.scvMap(): {
       type Key = KeyType<T>;
@@ -124,16 +119,16 @@ export function scValToJs<T>(val: xdr.ScVal): T {
         //@ts-ignore
         res[key as Key] = value as Value;
       });
-      return res as unknown as T;
+      return (res as unknown) as T;
     }
     case xdr.ScValType.scvContractInstance():
-      return val.instance() as unknown as T;
+      return (val.instance() as unknown) as T;
     case xdr.ScValType.scvLedgerKeyNonce():
-      return val.nonceKey() as unknown as T;
+      return (val.nonceKey() as unknown) as T;
     case xdr.ScValType.scvTimepoint():
-      return val.timepoint() as unknown as T;
+      return (val.timepoint() as unknown) as T;
     case xdr.ScValType.scvDuration():
-      return val.duration() as unknown as T;
+      return (val.duration() as unknown) as T;
     // TODO: Add this case when merged
     // case xdr.ScValType.scvError():
     default: {
@@ -155,8 +150,10 @@ export function i128ToScVal(i: bigint): xdr.ScVal {
   return xdr.ScVal.scvI128(
     new xdr.Int128Parts({
       lo: xdr.Uint64.fromString((i & BigInt(0xffffffffffffffffn)).toString()),
-      hi: xdr.Int64.fromString(((i >> BigInt(64)) & BigInt(0xffffffffffffffffn)).toString()),
-    }),
+      hi: xdr.Int64.fromString(
+        ((i >> BigInt(64)) & BigInt(0xffffffffffffffffn)).toString()
+      ),
+    })
   );
 }
 
@@ -164,7 +161,9 @@ export function u128ToScVal(i: bigint): xdr.ScVal {
   return xdr.ScVal.scvU128(
     new xdr.UInt128Parts({
       lo: xdr.Uint64.fromString((i & BigInt(0xffffffffffffffffn)).toString()),
-      hi: xdr.Int64.fromString(((i >> BigInt(64)) & BigInt(0xffffffffffffffffn)).toString()),
-    }),
+      hi: xdr.Int64.fromString(
+        ((i >> BigInt(64)) & BigInt(0xffffffffffffffffn)).toString()
+      ),
+    })
   );
 }

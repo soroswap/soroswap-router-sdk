@@ -23,6 +23,7 @@
     "@soroban-react/contracts": "^9.0.0",
     "axios": "^1.6.5",
     "big.js": "^6.2.1",
+    "bigint-conversion": "^2.4.3",
     "bignumber.js": "^9.1.2",
     "bunyan": "^1.8.15",
     "decimal.js-light": "^2.5.1",
