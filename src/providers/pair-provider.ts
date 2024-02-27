@@ -85,8 +85,8 @@ export class PairProvider {
     const cacheDuration = this._cacheInSeconds * 1000;
     const now = Date.now();
 
-    if (cache.pairs.length > 0 && now - cache.timestamp < cacheDuration) {
-      return cache.pairs;
+    if (cache?.pairs?.length > 0 && now - cache.timestamp < cacheDuration) {
+      return cache?.pairs;
     }
 
     let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
@@ -144,8 +144,8 @@ export class PairProvider {
 
     const cache = this._cache?.[cacheKey];
 
-    if (cache && now - cache.timestamp < cacheDuration) {
-      return cache.pairs;
+    if (cache?.pairs?.length > 0 && now - cache.timestamp < cacheDuration) {
+      return cache?.pairs;
     }
 
     try {
