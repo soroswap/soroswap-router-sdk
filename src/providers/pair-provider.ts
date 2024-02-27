@@ -1,9 +1,9 @@
-import { addressToScVal, scValToJs } from "../helpers/convert";
-import { ChainId, Protocols } from "../constants";
-import { contractInvoke } from "@soroban-react/contracts";
-import { SorobanContextType } from "@soroban-react/core";
-import { Token, Pair, CurrencyAmount } from "../entities";
-import { xdr } from "stellar-sdk";
+import { addressToScVal, scValToJs } from '../helpers/convert';
+import { ChainId, Protocols } from '../constants';
+import { contractInvoke } from '@soroban-react/contracts';
+import { SorobanContextType } from '@soroban-react/core';
+import { Token, Pair, CurrencyAmount } from '../entities';
+import { xdr } from 'stellar-sdk';
 
 /**
  * @ignore
@@ -21,9 +21,9 @@ export interface PairFromApi {
  * Maps ChainId to its corresponding network name.
  */
 export const chainIdToName = {
-  [ChainId.TESTNET]: "testnet",
-  [ChainId.STANDALONE]: "standalone",
-  [ChainId.FUTURENET]: "futurenet",
+  [ChainId.TESTNET]: 'testnet',
+  [ChainId.STANDALONE]: 'standalone',
+  [ChainId.FUTURENET]: 'futurenet',
 };
 
 /**
@@ -53,7 +53,7 @@ export class PairProvider {
     chainId: ChainId,
     backendUrl: string,
     backendApiKey: string,
-    cacheInSeconds: number = 20
+    cacheInSeconds: number = 20,
   ) {
     this._chainId = chainId;
     this._backendUrl = backendUrl;
@@ -67,35 +67,18 @@ export class PairProvider {
    *
    * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
    */
-  public async getPairsFromBackend(
-    protocols: Protocols[] = [Protocols.SOROSWAP]
-  ): Promise<Pair[]> {
+  public async getPairsFromBackend(protocols: Protocols[] = [Protocols.SOROSWAP]): Promise<Pair[]> {
     const chainName = chainIdToName[this._chainId];
 
-    const sortedProtocols = protocols.sort();
-    const aggProtocols = sortedProtocols.reduce(
-      (acc, protocol) => acc + `&protocols=${protocol}`,
-      ""
-    );
-
-    const cachekey = `${this._chainId}/${aggProtocols}`;
-
-    const cache = this._cache?.[cachekey];
-
-    const cacheDuration = this._cacheInSeconds * 1000;
-    const now = Date.now();
-
-    if (cache && now - cache.timestamp < cacheDuration) {
-      return cache?.pairs;
-    }
+    const aggProtocols = protocols.reduce((acc, protocol) => acc + `&protocols=${protocol}`, '');
 
     let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
 
     const response = await fetch(endpointUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
         apiKey: this._backendApiKey,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     });
 
@@ -107,13 +90,11 @@ export class PairProvider {
 
       const newPair = new Pair(
         CurrencyAmount.fromRawAmount(token0, pair.reserve0),
-        CurrencyAmount.fromRawAmount(token1, pair.reserve1)
+        CurrencyAmount.fromRawAmount(token1, pair.reserve1),
       );
 
       return newPair;
     });
-
-    this._cache[cachekey] = { pairs: allPairs, timestamp: Date.now() };
 
     return allPairs;
   }
@@ -132,26 +113,14 @@ export class PairProvider {
     address0: string,
     address1: string,
     factoryAddress: string | undefined,
-    sorobanContext: SorobanContextType | undefined
+    sorobanContext: SorobanContextType | undefined,
   ): Promise<Pair[] | null> {
     if (!factoryAddress || !sorobanContext) return null;
-
-    const cacheKey = `${this._chainId}/${address0}/${address1}`;
-
-    const cacheDuration = this._cacheInSeconds * 1000;
-
-    const now = Date.now();
-
-    const cache = this._cache?.[cacheKey];
-
-    if (cache && now - cache.timestamp < cacheDuration) {
-      return cache?.pairs;
-    }
 
     try {
       const response = await contractInvoke({
         contractAddress: factoryAddress,
-        method: "get_pair",
+        method: 'get_pair',
         args: [addressToScVal(address0), addressToScVal(address1)],
         sorobanContext,
       });
@@ -162,7 +131,7 @@ export class PairProvider {
 
       const reserves_scval = await contractInvoke({
         contractAddress: pairAddress,
-        method: "get_reserves",
+        method: 'get_reserves',
         args: [],
         sorobanContext,
       });
@@ -174,7 +143,7 @@ export class PairProvider {
 
       const token0_scval = await contractInvoke({
         contractAddress: pairAddress,
-        method: "token_0",
+        method: 'token_0',
         args: [],
         sorobanContext,
       });
@@ -183,7 +152,7 @@ export class PairProvider {
 
       const token1_scval = await contractInvoke({
         contractAddress: pairAddress,
-        method: "token_1",
+        method: 'token_1',
         args: [],
         sorobanContext,
       });
@@ -193,11 +162,9 @@ export class PairProvider {
       const token1 = new Token(this._chainId, token1String, 7);
 
       const pair = new Pair(
-        CurrencyAmount.fromRawAmount(token0, reserve0?.toString() || "0"),
-        CurrencyAmount.fromRawAmount(token1, reserve1?.toString() || "0")
+        CurrencyAmount.fromRawAmount(token0, reserve0?.toString() || '0'),
+        CurrencyAmount.fromRawAmount(token1, reserve1?.toString() || '0'),
       );
-
-      this._cache[cacheKey] = { pairs: [pair], timestamp: Date.now() };
 
       return [pair];
     } catch (error) {
@@ -210,43 +177,48 @@ export class PairProvider {
     address1: string,
     factoryAddress: string | undefined,
     sorobanContext: SorobanContextType | undefined,
-    protocols: Protocols[]
+    protocols: Protocols[],
   ): Promise<Pair[] | null> {
-    if (this._chainId === ChainId.TESTNET) {
-      try {
-        const cacheKey = `${this._chainId}/${address0}/${address1}/${factoryAddress}`;
+    const sortedProtocols = protocols.sort();
 
-        const cacheDuration = this._cacheInSeconds * 1000;
+    const cacheKey = `${this._chainId}/${address0}/${address1}/${factoryAddress}/${sortedProtocols}`;
 
-        const now = Date.now();
+    const cacheDuration = this._cacheInSeconds * 1000;
 
-        const cache = this._cache?.[cacheKey];
+    const now = Date.now();
 
-        if (cache && now - cache.timestamp < cacheDuration) {
-          return cache?.pairs;
-        }
+    const cache = this._cache?.[cacheKey];
 
-        const pairs = await this.getPairsFromBackend(protocols);
-        return pairs;
-      } catch (error) {
-        const pairs = await this.getPairFromBlockchain(
-          address0,
-          address1,
-          factoryAddress,
-          sorobanContext
-        );
+    if (cache && now - cache.timestamp < cacheDuration) {
+      console.log('using cache', { cacheKey, cache });
+      return cache?.pairs;
+    }
 
-        return pairs;
-      }
-    } else {
+    const getFromBlockchain = async () => {
       const pairs = await this.getPairFromBlockchain(
         address0,
         address1,
         factoryAddress,
-        sorobanContext
+        sorobanContext,
       );
 
+      this._cache[cacheKey] = { pairs: pairs ?? [], timestamp: Date.now() };
+
       return pairs;
+    };
+
+    if (this._chainId === ChainId.TESTNET) {
+      try {
+        const pairs = await this.getPairsFromBackend(protocols);
+
+        this._cache[cacheKey] = { pairs, timestamp: Date.now() };
+
+        return pairs;
+      } catch (error) {
+        return getFromBlockchain();
+      }
+    } else {
+      return getFromBlockchain();
     }
   }
 
