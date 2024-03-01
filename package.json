@@ -17,9 +17,6 @@
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "dependencies": {
-    "@ethersproject/address": "^5.7.0",
-    "@ethersproject/logger": "^5.7.0",
-    "@ethersproject/solidity": "^5.7.0",
     "@soroban-react/contracts": "^9.0.0",
     "axios": "^1.6.5",
     "big.js": "^6.2.1",

@@ -4,15 +4,14 @@ import {
   V2Route,
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
-import { BigNumber } from "@ethersproject/bignumber";
 import { ChainId, Protocols, TradeType } from "../constants";
 import { Currency, Token, Pair, Route } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
-import { Logger } from "@ethersproject/logger";
 import { PairProvider } from "../providers/pair-provider";
 import { SorobanContextType } from "@soroban-react/core";
 import JSBI from "jsbi";
+import BigNumber from "bignumber.js";
 
 export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;
@@ -499,8 +498,6 @@ export class Router {
       const { quote, amount } = quotes[0]!;
 
       if (!quote) {
-        Logger.globalLogger().debug(`No quote for ... ${route.path}`);
-
         continue;
       }
 

@@ -1,8 +1,8 @@
 import invariant from "tiny-invariant";
-import { BigNumber } from "@ethersproject/bignumber";
 
 import { BaseCurrency } from "./base-currency";
 import { Currency } from "./currency";
+import BigNumber from "bignumber.js";
 
 /**
  * Represents an ERC20 token with a unique address and some metadata.

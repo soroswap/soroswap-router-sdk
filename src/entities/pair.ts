@@ -1,6 +1,5 @@
 import invariant from "tiny-invariant";
 import JSBI from "jsbi";
-import { BigNumber } from "@ethersproject/bignumber";
 import {
   MINIMUM_LIQUIDITY,
   FIVE,
@@ -488,7 +487,7 @@ export class Pair {
     const sellFeeBips = this.token0.wrapped.equals(inputAmount.wrapped.currency)
       ? this.token0.wrapped.sellFeeBps
       : this.token1.wrapped.sellFeeBps;
-    if (sellFeeBips?.gt(BigNumber.from(0))) {
+    if (sellFeeBips?.gt(0)) {
       return ONE_HUNDRED_PERCENT.subtract(
         new Percent(JSBI.BigInt(sellFeeBips)).divide(BASIS_POINTS)
       );
@@ -503,7 +502,7 @@ export class Pair {
     const buyFeeBps = this.token0.wrapped.equals(outputAmount.wrapped.currency)
       ? this.token0.wrapped.buyFeeBps
       : this.token1.wrapped.buyFeeBps;
-    if (buyFeeBps?.gt(BigNumber.from(0))) {
+    if (buyFeeBps?.gt(0)) {
       return ONE_HUNDRED_PERCENT.subtract(
         new Percent(JSBI.BigInt(buyFeeBps)).divide(BASIS_POINTS)
       );

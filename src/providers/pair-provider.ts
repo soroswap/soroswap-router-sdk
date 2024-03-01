@@ -175,7 +175,6 @@ export class PairProvider {
 
       return [pair];
     } catch (error) {
-      console.log(error);
       return null;
     }
   }

@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { TradeType } from "../constants";
 import { Token, Route } from "../entities";
 import {
@@ -5,7 +6,6 @@ import {
   InsufficientReservesError,
 } from "../entities/pair";
 import { CurrencyAmount } from "../utils/amounts";
-import { BigNumber } from "@ethersproject/bignumber";
 
 /**
  * @ignore
@@ -97,7 +97,7 @@ export class QuoteProvider {
 
             amountQuotes.push({
               amount,
-              quote: BigNumber.from(outputAmount.quotient.toString()),
+              quote: BigNumber(outputAmount.quotient.toString()),
             });
           } else {
             let inputAmount = amount.wrapped;
@@ -109,7 +109,7 @@ export class QuoteProvider {
 
             amountQuotes.push({
               amount,
-              quote: BigNumber.from(inputAmount.quotient.toString()),
+              quote: BigNumber(inputAmount.quotient.toString()),
             });
           }
         } catch (err) {
