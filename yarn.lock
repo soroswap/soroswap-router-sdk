@@ -1680,7 +1680,7 @@
   resolved "https://registry.npmjs.org/@stellar/freighter-api/-/freighter-api-1.7.1.tgz"
   integrity sha512-XvPO+XgEbkeP0VhP0U1edOkds+rGS28+y8GRGbCVXeZ9ZslbWqRFQoETAdX8IXGuykk2ib/aPokiLc5ZaWYP7w==
 
-"@stellar/js-xdr@^3.0.1":
+"@stellar/js-xdr@^3.0.1", "@stellar/js-xdr@^3.1.0":
   version "3.1.0"
   resolved "https://registry.npmjs.org/@stellar/js-xdr/-/js-xdr-3.1.0.tgz"
   integrity sha512-mYTyFnhgyQgyvpAYZRO1LurUn2MxcIZRj74zZz/BxKEk7zrL4axhQ1ez0HL2BRi0wlG6cHn5BeD/t9Xcyp7CSQ==
@@ -1698,6 +1698,21 @@
     tweetnacl "^1.0.3"
   optionalDependencies:
     sodium-native "^4.0.1"
+
+"@stellar/stellar-base@^11.0.0":
+  version "11.0.0"
+  resolved "https://registry.yarnpkg.com/@stellar/stellar-base/-/stellar-base-11.0.0.tgz#9c2595f0aa1fe955191656fe9bda7a6b34ef82f0"
+  integrity sha512-KPTjaWJCG2m7hMCPRWFGGPaG5qOkgPLWvFVOhe1HUy7dlE4MxxPfdusz0mcLkf6VT7doqhLB1rIt0D9M2GgQcQ==
+  dependencies:
+    "@stellar/js-xdr" "^3.1.0"
+    base32.js "^0.1.0"
+    bignumber.js "^9.1.2"
+    buffer "^6.0.3"
+    sha.js "^2.3.6"
+    tweetnacl "^1.0.3"
+    typescript "^5.3.3"
+  optionalDependencies:
+    sodium-native "^4.0.8"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
@@ -2274,7 +2289,7 @@ axe-core@=4.7.0:
   resolved "https://registry.npmjs.org/axe-core/-/axe-core-4.7.0.tgz"
   integrity sha512-M0JtH+hlOL5pLQwHOLNYZaXuhqmvS8oExsqB1SBYgA4Dk7u/xx+YdGHXaK5pyUfed5mYXdlYiphWq3G8cRi5JQ==
 
-axios@^1.6.0, axios@^1.6.5:
+axios@^1.6.0, axios@^1.6.5, axios@^1.6.7:
   version "1.6.7"
   resolved "https://registry.npmjs.org/axios/-/axios-1.6.7.tgz"
   integrity sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==
@@ -7104,7 +7119,7 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
-sodium-native@^4.0.1:
+sodium-native@^4.0.1, sodium-native@^4.0.8:
   version "4.0.10"
   resolved "https://registry.npmjs.org/sodium-native/-/sodium-native-4.0.10.tgz"
   integrity sha512-vrJQt4gASntDbnltRRk9vN4rks1SehjM12HkqQtu250JtWT+/lo8oEOa1HvSq3+8hzJdYcCJuLR5qRGxoRDjAg==
@@ -7262,6 +7277,20 @@ stellar-sdk@11.1.0:
     eventsource "^2.0.2"
     randombytes "^2.1.0"
     toml "^3.0.0"
+    urijs "^1.19.1"
+
+stellar-sdk@^11.2.2:
+  version "11.2.2"
+  resolved "https://registry.yarnpkg.com/stellar-sdk/-/stellar-sdk-11.2.2.tgz#930ba86e10bdc71b2ad7a3f0bd60323ff708e12a"
+  integrity sha512-xecQW4gkPIxAvxcVFcw4ZSTtzpUmJPd4A4e4Mr3EkOdyWnshMIZQMzFox5DuAikrThofgihScJGYrDCmo3I/BA==
+  dependencies:
+    "@stellar/stellar-base" "^11.0.0"
+    axios "^1.6.7"
+    bignumber.js "^9.1.2"
+    eventsource "^2.0.2"
+    randombytes "^2.1.0"
+    toml "^3.0.0"
+    typescript "^5.3.3"
     urijs "^1.19.1"
 
 string-length@^3.1.0:

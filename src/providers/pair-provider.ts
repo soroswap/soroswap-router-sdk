@@ -1,9 +1,8 @@
-import { addressToScVal, scValToJs } from "../helpers/convert";
 import { ChainId, Protocols } from "../constants";
 import { contractInvoke } from "@soroban-react/contracts";
 import { SorobanContextType } from "@soroban-react/core";
 import { Token, Pair, CurrencyAmount } from "../entities";
-import { xdr } from "stellar-sdk";
+import { Address, scValToNative, xdr } from "stellar-sdk";
 
 /**
  * @ignore
@@ -126,11 +125,14 @@ export class PairProvider {
       const response = await contractInvoke({
         contractAddress: factoryAddress,
         method: "get_pair",
-        args: [addressToScVal(address0), addressToScVal(address1)],
+        args: [
+          new Address(address0).toScVal(),
+          new Address(address1).toScVal(),
+        ],
         sorobanContext,
       });
 
-      const pairAddress = scValToJs(response as xdr.ScVal) as string;
+      const pairAddress = scValToNative(response as xdr.ScVal) as string;
 
       if (!pairAddress) return null;
 
@@ -141,7 +143,7 @@ export class PairProvider {
         sorobanContext,
       });
 
-      const reserves: string = scValToJs(reserves_scval as xdr.ScVal);
+      const reserves: string = scValToNative(reserves_scval as xdr.ScVal);
 
       const reserve0 = reserves[0];
       const reserve1 = reserves[1];
@@ -153,7 +155,7 @@ export class PairProvider {
         sorobanContext,
       });
 
-      const token0String: string = scValToJs(token0_scval as xdr.ScVal);
+      const token0String: string = scValToNative(token0_scval as xdr.ScVal);
 
       const token1_scval = await contractInvoke({
         contractAddress: pairAddress,
@@ -161,7 +163,7 @@ export class PairProvider {
         args: [],
         sorobanContext,
       });
-      const token1String: string = scValToJs(token1_scval as xdr.ScVal);
+      const token1String: string = scValToNative(token1_scval as xdr.ScVal);
 
       const token0 = new Token(this._chainId, token0String, 7);
       const token1 = new Token(this._chainId, token1String, 7);
@@ -173,6 +175,7 @@ export class PairProvider {
 
       return [pair];
     } catch (error) {
+      console.log(error);
       return null;
     }
   }
