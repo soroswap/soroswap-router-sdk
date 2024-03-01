@@ -22,16 +22,16 @@ yarn add soroswap-router-sdk
 import {
   Router,
   Token,
-  ChainId,
   CurrencyAmount,
   TradeType,
+  Networks,
 } from "soroswap-router-sdk";
 
 const XLM_ADDRESS = "CDMLFMKMMD7MWZP3FKUBZPVHTUEDLSX4BYGYKH4GCESXYHS3IHQ4EIG4";
 const USDC_ADDRESS = "CAMZFR4BHDUMT6J7INBBBGJG22WMS26RXEYORKC2ERZL2YGDIEEKTOJB";
 
 const XLM_TOKEN = new Token(
-  ChainId.TESTNET,
+  Networks.TESTNET,
   XLM_ADDRESS,
   7,
   "XLM",
@@ -39,7 +39,7 @@ const XLM_TOKEN = new Token(
 );
 
 const USDC_TOKEN = new Token(
-  ChainId.TESTNET,
+  Networks.TESTNET,
   USDC_ADDRESS,
   7,
   "USDC",

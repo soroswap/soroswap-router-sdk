@@ -11,6 +11,7 @@ import {
   ONE_HUNDRED_PERCENT,
   ZERO_PERCENT,
   BigintIsh,
+  Networks,
 } from "../constants";
 import { Token } from "./token";
 import { CurrencyAmount, Percent, Price } from "./fractions";
@@ -66,7 +67,7 @@ export class Pair {
       : [tokenAmountB, currencyAmountA];
 
     this.liquidityToken = new Token(
-      tokenAmounts[0].currency.chainId,
+      tokenAmounts[0].currency.network,
       Pair.getAddress(tokenAmounts[0].currency, tokenAmounts[1].currency),
       18
     );
@@ -123,8 +124,8 @@ export class Pair {
   /**
    * Returns the chain ID of the tokens in the pair.
    */
-  public get chainId(): number {
-    return this.token0.chainId;
+  public get network(): Networks {
+    return this.token0.network;
   }
 
   public get token0(): Token {

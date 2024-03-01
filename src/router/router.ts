@@ -4,14 +4,14 @@ import {
   V2Route,
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
-import { ChainId, Protocols, TradeType } from "../constants";
 import { Currency, Token, Pair, Route } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
 import { PairProvider } from "../providers/pair-provider";
+import { Protocols, TradeType, Networks } from "../constants";
 import { SorobanContextType } from "@soroban-react/core";
-import JSBI from "jsbi";
 import BigNumber from "bignumber.js";
+import JSBI from "jsbi";
 
 export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;
@@ -43,20 +43,20 @@ export type V2RouteWithValidQuote = {
 /**
  * The Router class is the core of the soroswap-router-sdk, facilitating the discovery of optimal trade routes and quotes for token exchanges on a specified blockchain network. It leverages quote and pair providers to find the best exchange route based on the specified trade type, either exact input or exact output.
  * ```ts
- * const USDC = new Token(ChainId.TESTNET, USDC_ADDRESS, 7, "USDC", "USD Coin");
- * const XLM = new Token(ChainId.TESTNET, XLM_ADDRESS, 7, "XLM", "Stellar Lumens");
+ * const USDC = new Token(Networks.TESTNET, USDC_ADDRESS, 7, "USDC", "USD Coin");
+ * const XLM = new Token(Networks.TESTNET, XLM_ADDRESS, 7, "XLM", "Stellar Lumens");
  * const amountCurrency = CurrencyAmount.fromRawAmount(USDC, "100000000");
  * const quoteCurrency = XLM;
  * const tradeType = TradeType.EXACT_INPUT;
  *
- * const router = new Router('https://my-backend.com/', 'my-api-key', 20, ChainId.TESTNET);
+ * const router = new Router('https://my-backend.com/', 'my-api-key', 20, Networks.TESTNET);
  * const route = await router.route(amountCurrency, quoteCurrency, tradeType);
  * console.log(route.trade.path);
  * // Output: ['0x...', '0x...', '0x...']
  * ```
  */
 export class Router {
-  private _chainId: ChainId;
+  private _network: Networks;
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
   private _protocols: Protocols[];
@@ -66,24 +66,24 @@ export class Router {
    *
    * Example:
    * ```ts
-   * const router = new Router("http://localhost:4000", "my-api-key", 20, ChainId.TESTNET);
+   * const router = new Router("http://localhost:4000", "my-api-key", 20, Networks.TESTNET);
    * ```
    *
    * @param backendUrl The backend URL used to fetch pair and quote information.
    * @param backendApiKey The API key for authenticating with the backend.
    * @param pairsCacheInSeconds (Optional) The time in seconds to cache pair data.
-   * @param chainId (Optional) The blockchain network ID to operate on. Defaults to TESTNET if not provided.
+   * @param network (Optional) The blockchain network ID to operate on. Defaults to TESTNET if not provided.
    */
   constructor(
     backendUrl: string,
     backendApiKey: string,
     pairsCacheInSeconds?: number,
     protocols?: Protocols[],
-    chainId?: ChainId
+    network?: Networks
   ) {
-    this._chainId = chainId || ChainId.TESTNET;
+    this._network = network || Networks.TESTNET;
     this._pairProvider = new PairProvider(
-      this._chainId,
+      this._network,
       backendUrl,
       backendApiKey,
       pairsCacheInSeconds
@@ -401,7 +401,7 @@ export class Router {
       tokenIn,
       tokenOut,
       allPairs,
-      this._chainId,
+      this._network,
       [],
       [],
       tokenIn,
@@ -421,7 +421,7 @@ export class Router {
    * @param tokenIn The starting token for route computation.
    * @param tokenOut The destination token for route computation.
    * @param pairs An array of all available pairs to be considered for routing.
-   * @param chainId The ID of the blockchain network.
+   * @param network The ID of the blockchain network.
    * @param currentPath The current path being explored (used for recursion).
    * @param allPaths Accumulator for all valid paths found.
    * @param startTokenIn The original input token (used for recursion).
@@ -432,7 +432,7 @@ export class Router {
     tokenIn: Token,
     tokenOut: Token,
     pairs: Pair[],
-    chainId: ChainId,
+    network: Networks,
     currentPath: Pair[] = [],
     allPaths: V2Route[] = [],
     startTokenIn: Token = tokenIn,
@@ -454,7 +454,7 @@ export class Router {
           outputToken,
           tokenOut,
           pairs,
-          chainId,
+          network,
           [...currentPath, pair],
           allPaths,
           startTokenIn,

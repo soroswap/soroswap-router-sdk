@@ -1,4 +1,4 @@
-import { ChainId, Protocols } from "../src";
+import { Protocols, Networks } from "../src";
 import { PairProvider } from "../src/providers/pair-provider";
 import { SorobanContextType } from "@soroban-react/core";
 
@@ -13,7 +13,7 @@ describe("PairProvider", () => {
 
   test("getAllPairs Calls Backend When Is Testnet And Backend Is Working", async () => {
     const pairProvider = new PairProvider(
-      ChainId.TESTNET,
+      Networks.TESTNET,
       "https://api.example.com",
       "api-key",
       20
@@ -48,7 +48,7 @@ describe("PairProvider", () => {
 
   test("getAllPairs Fallbacks To getPairFromBlockchain When Backend Fails And Chain Is Testnet", async () => {
     const pairProvider = new PairProvider(
-      ChainId.TESTNET,
+      Networks.TESTNET,
       "https://api.example.com",
       "api-key",
       20
@@ -87,10 +87,10 @@ describe("PairProvider", () => {
     expect(getPairFromBlockchainMock).toHaveBeenCalledTimes(1);
   });
 
-  test("getAllPairs Fallbacks To getPairFromBlockchain When ChainId Is Not Testnet", async () => {
+  test("getAllPairs Fallbacks To getPairFromBlockchain When Network Is Not Testnet", async () => {
     // using standalone chain id
     const pairProvider = new PairProvider(
-      ChainId.STANDALONE,
+      Networks.STANDALONE,
       "https://api.example.com",
       "api-key",
       20

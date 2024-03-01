@@ -1,7 +1,7 @@
 import JSBI from "jsbi";
 import { Percent } from "./entities/fractions/percent";
-
 export type BigintIsh = JSBI | string | number;
+export { Networks } from "stellar-sdk";
 
 export enum Protocols {
   SOROSWAP = "soroswap",
@@ -9,20 +9,14 @@ export enum Protocols {
 }
 
 export enum TradeType {
-  EXACT_INPUT,
-  EXACT_OUTPUT,
+  EXACT_INPUT = "EXACT_INPUT",
+  EXACT_OUTPUT = "EXACT_OUTPUT",
 }
 
 export enum Rounding {
   ROUND_DOWN,
   ROUND_HALF_UP,
   ROUND_UP,
-}
-
-export enum ChainId {
-  TESTNET = 1,
-  STANDALONE = 2,
-  FUTURENET = 3,
 }
 
 export const MaxUint256 = JSBI.BigInt(

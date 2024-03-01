@@ -1,16 +1,16 @@
 import fetchMock from "jest-fetch-mock";
 import {
-  ChainId,
   CurrencyAmount,
   Pair,
   Protocols,
   Router,
   Token,
   TradeType,
+  Networks,
 } from "../src";
 
 const createToken = (address: string) => {
-  return new Token(ChainId.TESTNET, address, 7);
+  return new Token(Networks.TESTNET, address, 7);
 };
 
 const createPair = (
@@ -31,7 +31,7 @@ const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
     "my-api-key",
     20,
     protocols,
-    ChainId.TESTNET
+    Networks.TESTNET
   );
 };
 

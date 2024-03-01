@@ -3,10 +3,8 @@ import invariant from "tiny-invariant";
 import { BaseCurrency } from "./base-currency";
 import { Currency } from "./currency";
 import BigNumber from "bignumber.js";
+import { Networks } from "../constants";
 
-/**
- * Represents an ERC20 token with a unique address and some metadata.
- */
 export class Token extends BaseCurrency {
   public readonly isNative: false = false;
   public readonly isToken: true = true;
@@ -31,13 +29,13 @@ export class Token extends BaseCurrency {
    * @param name {@link BaseCurrency#name}
    */
   public constructor(
-    chainId: number,
+    network: Networks,
     address: string,
     decimals: number,
     symbol?: string,
     name?: string
   ) {
-    super(chainId, decimals, symbol, name);
+    super(network, decimals, symbol, name);
     this.address = address;
   }
 
@@ -48,7 +46,7 @@ export class Token extends BaseCurrency {
   public equals(other: Currency): boolean {
     return (
       other.isToken &&
-      this.chainId === other.chainId &&
+      this.network === other.network &&
       this.address.toLowerCase() === other.address.toLowerCase()
     );
   }
@@ -59,7 +57,7 @@ export class Token extends BaseCurrency {
    * @throws if the tokens have the same address
    */
   public sortsBefore(other: Token): boolean {
-    invariant(this.chainId === other.chainId, "CHAIN_IDS");
+    invariant(this.network === other.network, "CHAIN_IDS");
     invariant(
       this.address.toLowerCase() !== other.address.toLowerCase(),
       "ADDRESSES"

@@ -1,9 +1,8 @@
-import { ChainId, Protocols } from "../constants";
+import { Protocols } from "../constants";
 import { contractInvoke } from "@soroban-react/contracts";
 import { SorobanContextType } from "@soroban-react/core";
 import { Token, Pair, CurrencyAmount } from "../entities";
-import { Address, scValToNative, xdr } from "stellar-sdk";
-
+import { Address, Networks, scValToNative, xdr } from "stellar-sdk";
 /**
  * @ignore
  * Represents a pair as returned from the API, including token addresses and reserves.
@@ -15,25 +14,21 @@ export interface PairFromApi {
   reserve1: string;
 }
 
-/**
- * @ignore
- * Maps ChainId to its corresponding network name.
- */
-export const chainIdToName = {
-  [ChainId.TESTNET]: "testnet",
-  [ChainId.STANDALONE]: "standalone",
-  [ChainId.FUTURENET]: "futurenet",
+export const networkToName: { [key: string]: string } = {
+  [Networks.TESTNET]: "testnet",
+  [Networks.STANDALONE]: "standalone",
+  [Networks.FUTURENET]: "futurenet",
 };
 
 /**
  * Provides functionality to fetch and cache pairs from a backend API, based on the specified blockchain network.
  *
  * ```typescript
- * const pairProvider = new PairProvider(ChainId.TESTNET, "https://api.example.com", "api-key", 20);
+ * const pairProvider = new PairProvider(Networks.TESTNET, "https://api.example.com", "api-key", 20);
  * ```
  */
 export class PairProvider {
-  private _chainId: ChainId;
+  private _network: Networks;
   private _backendUrl: string;
   private _backendApiKey: string;
   private _cache: {
@@ -43,18 +38,18 @@ export class PairProvider {
   /**
    * Initializes a new instance of the PairProvider.
    *
-   * @param chainId The blockchain network ID to operate on.
+   * @param network The blockchain network ID to operate on.
    * @param backendUrl The backend URL used to fetch pair information.
    * @param backendApiKey The API key for authenticating with the backend.
    * @param cacheInSeconds (Optional) The time in seconds to cache pair data, defaulting to 20 seconds.
    */
   constructor(
-    chainId: ChainId,
+    network: Networks,
     backendUrl: string,
     backendApiKey: string,
     cacheInSeconds: number = 20
   ) {
-    this._chainId = chainId;
+    this._network = network;
     this._backendUrl = backendUrl;
     this._backendApiKey = backendApiKey;
     this._cacheInSeconds = cacheInSeconds;
@@ -69,14 +64,14 @@ export class PairProvider {
   public async getPairsFromBackend(
     protocols: Protocols[] = [Protocols.SOROSWAP]
   ): Promise<Pair[]> {
-    const chainName = chainIdToName[this._chainId];
+    const networkName = networkToName[this._network];
 
     const aggProtocols = protocols.reduce(
       (acc, protocol) => acc + `&protocols=${protocol}`,
       ""
     );
 
-    let endpointUrl = `${this._backendUrl}/pairs/all?network=${chainName}${aggProtocols}`;
+    let endpointUrl = `${this._backendUrl}/pairs/all?network=${networkName}${aggProtocols}`;
 
     const response = await fetch(endpointUrl, {
       method: "POST",
@@ -89,8 +84,8 @@ export class PairProvider {
     const apiPairs: PairFromApi[] = await response.json();
 
     const allPairs = apiPairs.map((pair) => {
-      const token0 = new Token(this._chainId, pair.token0, 7);
-      const token1 = new Token(this._chainId, pair.token1, 7);
+      const token0 = new Token(this._network, pair.token0, 7);
+      const token1 = new Token(this._network, pair.token1, 7);
 
       const newPair = new Pair(
         CurrencyAmount.fromRawAmount(token0, pair.reserve0),
@@ -165,8 +160,8 @@ export class PairProvider {
       });
       const token1String: string = scValToNative(token1_scval as xdr.ScVal);
 
-      const token0 = new Token(this._chainId, token0String, 7);
-      const token1 = new Token(this._chainId, token1String, 7);
+      const token0 = new Token(this._network, token0String, 7);
+      const token1 = new Token(this._network, token1String, 7);
 
       const pair = new Pair(
         CurrencyAmount.fromRawAmount(token0, reserve0?.toString() || "0"),
@@ -188,7 +183,7 @@ export class PairProvider {
   ): Promise<Pair[] | null> {
     const sortedProtocols = protocols.sort();
 
-    const cacheKey = `${this._chainId}/${address0}/${address1}/${factoryAddress}/${sortedProtocols}`;
+    const cacheKey = `${this._network}/${address0}/${address1}/${factoryAddress}/${sortedProtocols}`;
 
     const cacheDuration = this._cacheInSeconds * 1000;
 
@@ -213,7 +208,7 @@ export class PairProvider {
       return pairs;
     };
 
-    if (this._chainId === ChainId.TESTNET) {
+    if (this._network === Networks.TESTNET) {
       try {
         const pairs = await this.getPairsFromBackend(protocols);
 
