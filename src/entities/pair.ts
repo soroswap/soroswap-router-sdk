@@ -328,15 +328,6 @@ export class Pair {
     calculateFotFees: boolean = true
   ): [CurrencyAmount<Token>, Pair] {
     invariant(this.involvesToken(outputAmount.currency), "TOKEN");
-    const percentAfterBuyFees = calculateFotFees
-      ? this.derivePercentAfterBuyFees(outputAmount)
-      : ZERO_PERCENT;
-    const outputAmountBeforeTax = percentAfterBuyFees.greaterThan(ZERO_PERCENT)
-      ? CurrencyAmount.fromRawAmount(
-          outputAmount.currency,
-          JSBI.add(outputAmount.divide(percentAfterBuyFees).quotient, ONE) // add 1 for rounding up
-        )
-      : outputAmount;
 
     if (
       JSBI.equal(this.reserve0.quotient, ZERO) ||
@@ -346,7 +337,7 @@ export class Pair {
         this.reserveOf(outputAmount.currency).quotient
       ) ||
       JSBI.greaterThanOrEqual(
-        outputAmountBeforeTax.quotient,
+        outputAmount.quotient,
         this.reserveOf(outputAmount.currency).quotient
       )
     ) {
@@ -359,11 +350,11 @@ export class Pair {
     );
 
     const numerator = JSBI.multiply(
-      JSBI.multiply(inputReserve.quotient, outputAmountBeforeTax.quotient),
+      JSBI.multiply(inputReserve.quotient, outputAmount.quotient),
       _1000
     );
     const denominator = JSBI.multiply(
-      JSBI.subtract(outputReserve.quotient, outputAmountBeforeTax.quotient),
+      JSBI.subtract(outputReserve.quotient, outputAmount.quotient),
       _997
     );
     const inputAmount = CurrencyAmount.fromRawAmount(

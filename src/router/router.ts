@@ -89,7 +89,7 @@ export class Router {
       pairsCacheInSeconds
     );
     this._quoteProvider = new QuoteProvider();
-    this._protocols = protocols || [Protocols.SOROSWAP];
+    this._protocols = protocols?.sort() || [Protocols.SOROSWAP];
   }
 
   /**
@@ -134,89 +134,128 @@ export class Router {
     }
   }
 
-  /** Uses multiple protocols and calculates the optimal route for a trade given the amount, quote currency, and trade type. Returns the trade route and details if successful; otherwise returns null.
-   *
-   * Example:
-   * ```ts
-   * const route = await router.routeSplittingProtocols(amountCurrency, quoteCurrency, tradeType);
-   * ```
-   *
-   * @param amount The amount for the trade.
-   * @param quoteCurrency The currency to quote the trade in.
-   * @param tradeType The type of trade, either EXACT_INPUT or EXACT_OUTPUT.
-   * @returns The trade details including the route in each protocol, or null if no route is found.
-   * */
+  private _findBestDistribution(
+    s: number,
+    amounts: number[][]
+  ): [number, number[]] {
+    const n = amounts.length;
 
-  public async routeSplittingProtocols(
+    const VERY_NEGATIVE_VALUE = -1e72;
+
+    const answer: number[][] = new Array(n);
+    const parent: number[][] = new Array(n);
+
+    for (let i = 0; i < n; i++) {
+      answer[i] = new Array(s + 1).fill(0);
+      parent[i] = new Array(s + 1).fill(0);
+    }
+
+    for (let j = 0; j <= s; j++) {
+      answer[0][j] = amounts[0][j];
+      for (let i = 1; i < n; i++) {
+        answer[i][j] = VERY_NEGATIVE_VALUE;
+      }
+      parent[0][j] = 0;
+    }
+
+    for (let i = 1; i < n; i++) {
+      for (let j = 0; j <= s; j++) {
+        answer[i][j] = answer[i - 1][j];
+        parent[i][j] = j;
+
+        for (let k = 1; k <= j; k++) {
+          if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
+            answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+            parent[i][j] = j - k;
+          }
+        }
+      }
+    }
+
+    const distribution: number[] = new Array(this._protocols.length).fill(0);
+
+    let partsLeft = s;
+    for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
+      distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
+      partsLeft = parent[curExchange][partsLeft];
+    }
+
+    const returnAmount =
+      answer[n - 1][s] === VERY_NEGATIVE_VALUE ? 0 : answer[n - 1][s];
+
+    return [returnAmount, distribution];
+  }
+
+  public async routeSplit(
     amount: CurrencyAmount,
     quoteCurrency: Currency,
     tradeType: TradeType
   ) {
-    const totalProtocols = this._protocols.length;
-    const amountPerProtocol = amount.divide(totalProtocols);
-    const partsPerProtocol = 10 / totalProtocols;
+    const parts = 10;
 
-    if (tradeType === TradeType.EXACT_INPUT) {
-      const routes = await Promise.all(
-        this._protocols.map(async (protocol) => {
-          const route = await this.routeExactIn(
+    const interval = 100 / parts;
+
+    const partsArray = Array.from(
+      { length: parts },
+      (_, index) => interval * (index + 1)
+    );
+
+    let amounts: number[][] = new Array(this._protocols.length)
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
+
+    let paths: any[][] = new Array(this._protocols.length)
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
+
+    for (let i = 0; i < this._protocols.length; i++) {
+      for (let j = 0; j < partsArray.length; j++) {
+        const part = partsArray[j];
+        const amountPerProtocol = amount.multiply(part).divide(100);
+
+        let route: BuildTradeReturn | null = null;
+
+        if (tradeType === TradeType.EXACT_INPUT) {
+          route = await this.routeExactIn(
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            [protocol]
+            [this._protocols[i]]
           );
 
-          return {
-            protocol,
-            trade: route?.trade,
-            parts: partsPerProtocol,
-          };
-        })
-      );
-
-      const aggregatedAmountOutMin = routes.reduce(
-        (acc, route) => acc + Number(route.trade?.amountOutMin),
-        0
-      );
-
-      if (!aggregatedAmountOutMin) return null;
-
-      return {
-        distribution: routes,
-        amountIn: amount.asFraction.toFixed(0),
-        amountOutMin: aggregatedAmountOutMin,
-      };
-    } else {
-      const routes = await Promise.all(
-        this._protocols.map(async (protocol) => {
-          const route = await this.routeExactOut(
+          amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
+        } else {
+          route = await this.routeExactOut(
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            [protocol]
+            [this._protocols[i]]
           );
 
-          return {
-            protocol,
-            trade: route?.trade,
-            parts: partsPerProtocol,
-          };
-        })
-      );
+          amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
+        }
 
-      const aggregatedAmountInMax = routes.reduce(
-        (acc, route) => acc + Number(route.trade?.amountInMax),
-        0
-      );
-
-      if (!aggregatedAmountInMax) return null;
-
-      return {
-        distribution: routes,
-        amountOut: amount.asFraction.toFixed(0),
-        amountInMax: aggregatedAmountInMax,
-      };
+        paths[i][j + 1] = route?.trade?.path || [];
+      }
     }
+
+    const [totalAmount, distribution] = this._findBestDistribution(
+      parts,
+      amounts
+    );
+
+    return {
+      totalAmount,
+      distribution: distribution
+        .map((amount, index) => {
+          return {
+            protocol: this._protocols[index],
+            amount: amounts[index][amount],
+            path: paths[index][amount],
+          };
+        })
+        .filter((distribution) => distribution.amount > 0),
+    };
   }
 
   /**
