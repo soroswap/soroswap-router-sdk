@@ -26,13 +26,13 @@ const createPair = (
 };
 
 const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
-  return new Router(
-    "https://my-backend.com/",
-    "my-api-key",
-    20,
-    protocols,
-    Networks.TESTNET
-  );
+  return new Router({
+    backendUrl: "https://my-backend.com/",
+    backendApiKey: "my-api-key",
+    pairsCacheInSeconds: 20,
+    protocols: protocols,
+    network: Networks.TESTNET,
+  });
 };
 
 const XLM_TOKEN = createToken("XLM_ADDRESS");

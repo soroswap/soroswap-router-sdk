@@ -40,6 +40,15 @@ export type V2RouteWithValidQuote = {
   pairProvider: PairProvider;
 } | null;
 
+interface RouterOptions {
+  backendUrl: string;
+  backendApiKey: string;
+  pairsCacheInSeconds?: number;
+  protocols?: Protocols[];
+  network?: Networks;
+  shouldUseBackend?: boolean;
+}
+
 /**
  * The Router class is the core of the soroswap-router-sdk, facilitating the discovery of optimal trade routes and quotes for token exchanges on a specified blockchain network. It leverages quote and pair providers to find the best exchange route based on the specified trade type, either exact input or exact output.
  * ```ts
@@ -74,22 +83,17 @@ export class Router {
    * @param pairsCacheInSeconds (Optional) The time in seconds to cache pair data.
    * @param network (Optional) The blockchain network ID to operate on. Defaults to TESTNET if not provided.
    */
-  constructor(
-    backendUrl: string,
-    backendApiKey: string,
-    pairsCacheInSeconds?: number,
-    protocols?: Protocols[],
-    network?: Networks
-  ) {
-    this._network = network || Networks.TESTNET;
+  constructor(options: RouterOptions) {
+    this._network = options.network || Networks.TESTNET;
     this._pairProvider = new PairProvider(
       this._network,
-      backendUrl,
-      backendApiKey,
-      pairsCacheInSeconds
+      options.backendUrl,
+      options.backendApiKey,
+      options.pairsCacheInSeconds || 20,
+      options.shouldUseBackend ?? true
     );
     this._quoteProvider = new QuoteProvider();
-    this._protocols = protocols?.sort() || [Protocols.SOROSWAP];
+    this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
   }
 
   /**

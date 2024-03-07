@@ -16,7 +16,8 @@ describe("PairProvider", () => {
       Networks.TESTNET,
       "https://api.example.com",
       "api-key",
-      20
+      20,
+      true
     );
 
     const getPairsFromBackendMock = jest.spyOn(
@@ -51,7 +52,8 @@ describe("PairProvider", () => {
       Networks.TESTNET,
       "https://api.example.com",
       "api-key",
-      20
+      20,
+      true
     );
 
     const getPairsFromBackendMock = jest.spyOn(
@@ -93,7 +95,8 @@ describe("PairProvider", () => {
       Networks.STANDALONE,
       "https://api.example.com",
       "api-key",
-      20
+      20,
+      true
     );
 
     const getPairsFromBackendMock = jest.spyOn(

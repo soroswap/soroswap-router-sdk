@@ -35,6 +35,7 @@ export class PairProvider {
     [x: string]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
+  private _shouldUseBackend: boolean;
   /**
    * Initializes a new instance of the PairProvider.
    *
@@ -47,13 +48,15 @@ export class PairProvider {
     network: Networks,
     backendUrl: string,
     backendApiKey: string,
-    cacheInSeconds: number = 20
+    cacheInSeconds: number,
+    shouldUseBackend: boolean
   ) {
     this._network = network;
     this._backendUrl = backendUrl;
     this._backendApiKey = backendApiKey;
     this._cacheInSeconds = cacheInSeconds;
     this._cache = {};
+    this._shouldUseBackend = shouldUseBackend;
   }
 
   /**
@@ -208,7 +211,11 @@ export class PairProvider {
       return pairs;
     };
 
-    if (this._network === Networks.TESTNET) {
+    if (
+      (this._network === Networks.TESTNET ||
+        this._network === Networks.PUBLIC) &&
+      this._shouldUseBackend
+    ) {
       try {
         const pairs = await this.getPairsFromBackend(protocols);
 
