@@ -18,6 +18,7 @@ export const networkToName: { [key: string]: string } = {
   [Networks.TESTNET]: "testnet",
   [Networks.STANDALONE]: "standalone",
   [Networks.FUTURENET]: "futurenet",
+  [Networks.PUBLIC]: "mainnet",
 };
 
 /**
