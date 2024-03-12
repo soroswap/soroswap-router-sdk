@@ -34,6 +34,7 @@ export type V2RouteWithQuotes = [V2Route, V2AmountQuote[]];
  * ```typescript
  * const quoteProvider = new QuoteProvider();
  * ```
+ *
  */
 export class QuoteProvider {
   constructor() {}

@@ -57,8 +57,15 @@ interface RouterOptions {
  * const amountCurrency = CurrencyAmount.fromRawAmount(USDC, "100000000");
  * const quoteCurrency = XLM;
  * const tradeType = TradeType.EXACT_INPUT;
+ * 
+ * const router = new Router({
+    backendUrl: "https://my-backend.com/",
+    backendApiKey: "my-api-key",
+    pairsCacheInSeconds: 20,
+    protocols: [Protocols.SOROSWAP],
+    network: Networks.TESTNET,
+  })
  *
- * const router = new Router('https://my-backend.com/', 'my-api-key', 20, Networks.TESTNET);
  * const route = await router.route(amountCurrency, quoteCurrency, tradeType);
  * console.log(route.trade.path);
  * // Output: ['0x...', '0x...', '0x...']
@@ -75,7 +82,13 @@ export class Router {
    *
    * Example:
    * ```ts
-   * const router = new Router("http://localhost:4000", "my-api-key", 20, Networks.TESTNET);
+   * const router = new Router({
+      backendUrl: "https://my-backend.com/",
+      backendApiKey: "my-api-key",
+      pairsCacheInSeconds: 20,
+      protocols: [Protocols.SOROSWAP],
+      network: Networks.TESTNET,
+    })
    * ```
    *
    * @param backendUrl The backend URL used to fetch pair and quote information.
@@ -138,6 +151,12 @@ export class Router {
     }
   }
 
+  /**
+   * @private
+   * @param s - The total amount to be distributed among protocols.
+   * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
+   * @returns An array containing the total value of the distributed amounts and the distribution percentages.
+   */
   private _findBestDistribution(
     s: number,
     amounts: number[][]
@@ -190,6 +209,23 @@ export class Router {
     return [returnAmount, distribution];
   }
 
+  /**
+   * This method splits a given trade amount into multiple parts and determines the optimal distribution among different protocols.
+   *
+   * @param amount - The total trade amount to be split.
+   * @param quoteCurrency - The currency to quote the trade in.
+   * @param tradeType - The type of trade, either `EXACT_INPUT` or `EXACT_OUTPUT`.
+   * @returns A promise that resolves to an object containing the total value of the split amounts and the distribution details.
+   * @example
+   * const result = await router.routeSplit(amountCurrency, quoteCurrency, TradeType.EXACT_INPUT);
+   * console.log(result.totalAmount); // Output: 150
+   * console.log(result.distribution);
+   * // Output:
+   * // [
+   * //   { protocol: Protocols.SOROSWAP, amount: 100, path: ['0x...', '0x...', '0x...'] },
+   * //   { protocol: Protocols.PHOENIX, amount: 50, path: ['0x...', '0x...', '0x...'] }
+   * // ]
+   */
   public async routeSplit(
     amount: CurrencyAmount,
     quoteCurrency: Currency,

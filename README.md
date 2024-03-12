@@ -4,7 +4,7 @@ This repository contains routing logic for the Soroswap protocol.
 
 It searches for the most efficient way to swap token A for token B, considering the reserves available in the protocol's liquidity pools.
 
-##Install
+## Install
 
 ```ts
 npm i soroswap-router-sdk
@@ -48,11 +48,13 @@ const USDC_TOKEN = new Token(
 
 const amount = 10000000;
 
-const router = new Router(
-  "https://localhost:4000", // soroswap backend
-  "backend-apikey", // backend api key
-  10 // pairs cache duration
-);
+const router = new Router({
+  backendUrl: "https://my-backend.com/", //soroswap backend
+  backendApiKey: "my-api-key", // soroswap backend api key
+  pairsCacheInSeconds: 20, // pairs cache duration
+  protocols: [Protocols.SOROSWAP], // protocols to be used
+  network: Networks.TESTNET, // network to be used
+});
 
 const currencyAmount = CurrencyAmount.fromRawAmount(USDC_TOKEN, amount);
 const quoteCurrency = XLM_TOKEN;
