@@ -14,6 +14,10 @@ export interface PairFromApi {
   reserve1: string;
 }
 
+/**
+ * @ignore
+ * Represents the network to name mapping.
+ * */
 export const networkToName: { [key: string]: string } = {
   [Networks.TESTNET]: "testnet",
   [Networks.STANDALONE]: "standalone",
@@ -63,6 +67,7 @@ export class PairProvider {
   /**
    * Fetches all pairs from the backend API, caching them to reduce API calls. If cached pairs are still valid, returns them instead of fetching anew.
    *
+   * @param protocols (Optional) The protocols to fetch pairs for, defaulting to SOROSWAP.
    * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
    */
   public async getPairsFromBackend(
@@ -106,11 +111,11 @@ export class PairProvider {
    *
    * Fetches a pair from the blockchain, caching it to reduce API calls. If cached pair is still valid, returns it instead of fetching anew.
    *
-   * @param address0
-   * @param address1
-   * @param factoryAddress
-   * @param sorobanContext
-   * @returns
+   * @param address0 The address of the first token in the pair.
+   * @param address1 The address of the second token in the pair.
+   * @param factoryAddress The address of the factory contract.
+   * @param sorobanContext The Soroban context to use for the contract invocation.
+   * @returns A promise that resolves to an array of Pair instances representing the pair fetched from the blockchain, or null in case of an error.
    */
   public async getPairFromBlockchain(
     address0: string,
@@ -178,6 +183,18 @@ export class PairProvider {
     }
   }
 
+  /**
+   * Returns pairs wether from backend or blockchain
+   * If the network is testnet or public and shouldUseBackend is true, it will try to fetch from the backend first, and if it fails, it will fetch from the blockchain
+   * If the network is standalone or futurenet, it will fetch from the blockchain
+   *
+   * @param address0 The address of the first token in the pair.
+   * @param address1 The address of the second token in the pair.
+   * @param factoryAddress The address of the factory contract.
+   * @param sorobanContext The Soroban context to use for the contract invocation.
+   * @param protocols (Optional) The protocols to fetch pairs for, defaulting to SOROSWAP.
+   * @returns A promise that resolves to an array of Pair instances representing the pair fetched from the backend or blockchain, or null in case of an error.
+   */
   public async getAllPairs(
     address0: string,
     address1: string,
