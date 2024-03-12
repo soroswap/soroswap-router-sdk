@@ -16,7 +16,7 @@ or
 yarn add soroswap-router-sdk
 ```
 
-##How to use
+## How to use
 
 ```ts
 import {
@@ -66,4 +66,11 @@ const route = await router.route(
 console.log(route.trade.path);
 
 //Output: ['0x...', '0x...', '0x...']
+```
+## Document
+1.- Generate Documentation
+```
+bash docker/run.sh
+yarn
+yarn docs
 ```
