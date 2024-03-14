@@ -1,8 +1,8 @@
-import { Protocols } from "../constants";
 import { contractInvoke } from "@soroban-react/contracts";
 import { SorobanContextType } from "@soroban-react/core";
-import { Token, Pair, CurrencyAmount } from "../entities";
 import { Address, Networks, scValToNative, xdr } from "stellar-sdk";
+import { Protocols } from "../constants";
+import { CurrencyAmount, Pair, Token } from "../entities";
 /**
  * @ignore
  * Represents a pair as returned from the API, including token addresses and reserves.
@@ -19,10 +19,10 @@ export interface PairFromApi {
  * Represents the network to name mapping.
  * */
 export const networkToName: { [key: string]: string } = {
-  [Networks.TESTNET]: "testnet",
-  [Networks.STANDALONE]: "standalone",
-  [Networks.FUTURENET]: "futurenet",
-  [Networks.PUBLIC]: "mainnet",
+  [Networks.TESTNET]: "TESTNET",
+  [Networks.STANDALONE]: "STANDALONE",
+  [Networks.FUTURENET]: "FUTURENET",
+  [Networks.PUBLIC]: "MAINNET",
 };
 
 /**
