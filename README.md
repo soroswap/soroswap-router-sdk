@@ -1,5 +1,6 @@
 # Soroswap Router SDK
 
+[![npm version](https://badge.fury.io/js/soroswap-router-sdk.svg)](https://badge.fury.io/js/soroswap-router-sdk)
 This repository contains routing logic for the Soroswap protocol.
 
 It searches for the most efficient way to swap token A for token B, considering the reserves available in the protocol's liquidity pools.
