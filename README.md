@@ -10,7 +10,7 @@ It searches for the most efficient way to swap token A for token B, considering 
 - Documentation: https://soroswap-router-sdk.soroswap.finance/ 
 - NPM Package: https://www.npmjs.com/package/soroswap-router-sdk
 - Github Repo: https://github.com/soroswap/soroswap-router-sdk
--[Soroswap.Finance Discord Server] (https://discord.gg/QaezKEWXqX)
+- [Soroswap.Finance Discord Server] (https://discord.gg/QaezKEWXqX)
 
 ## Install
 
