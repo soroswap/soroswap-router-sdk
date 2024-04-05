@@ -1,6 +1,6 @@
 import { Protocols, Networks } from "../src";
 import { PairProvider } from "../src/providers/pair-provider";
-import { SorobanContextType } from "@soroban-react/core";
+import { SorobanContextType } from "../src/utils/contractInvoke/types";
 
 jest.mock("@soroban-react/contracts", () => ({
   contractInvoke: jest.fn(),

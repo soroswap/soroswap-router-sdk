@@ -9,7 +9,7 @@ import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
 import { PairProvider } from "../providers/pair-provider";
 import { Protocols, TradeType, Networks } from "../constants";
-import { SorobanContextType } from "@soroban-react/core";
+import { SorobanContextType } from "../utils/contractInvoke/types";
 import BigNumber from "bignumber.js";
 import JSBI from "jsbi";
 
