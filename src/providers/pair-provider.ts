@@ -1,5 +1,5 @@
-import { contractInvoke } from "@soroban-react/contracts";
-import { SorobanContextType } from "@soroban-react/core";
+import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
+import { SorobanContextType } from "../utils/contractInvoke/types";
 import { Address, Networks, scValToNative, xdr } from "stellar-sdk";
 import { Protocols } from "../constants";
 import { CurrencyAmount, Pair, Token } from "../entities";
