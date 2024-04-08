@@ -1,8 +1,8 @@
-import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
-import { SorobanContextType } from "../utils/contractInvoke/types";
-import { Address, Networks, scValToNative, xdr } from "stellar-sdk";
+import { Address, Networks, scValToNative, xdr } from "@stellar/stellar-sdk";
 import { Protocols } from "../constants";
 import { CurrencyAmount, Pair, Token } from "../entities";
+import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
+import { SorobanContextType } from "../utils/contractInvoke/types";
 /**
  * @ignore
  * Represents a pair as returned from the API, including token addresses and reserves.
