@@ -1,10 +1,6 @@
-import { Protocols, Networks } from "../src";
+import { Networks, Protocols } from "../src";
 import { PairProvider } from "../src/providers/pair-provider";
 import { SorobanContextType } from "../src/utils/contractInvoke/types";
-
-jest.mock("@soroban-react/contracts", () => ({
-  contractInvoke: jest.fn(),
-}));
 
 describe("PairProvider", () => {
   const address0 = "ADDRESS_0";
