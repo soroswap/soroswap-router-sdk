@@ -4,7 +4,7 @@ import {
   V2Route,
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
-import { Currency, Token, Pair, Route } from "../entities";
+import { Currency, Token, Pair, Route, Percent } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
 import { PairProvider } from "../providers/pair-provider";
@@ -12,6 +12,7 @@ import { Protocols, TradeType, Networks } from "../constants";
 import { SorobanContextType } from "../utils/contractInvoke/types";
 import BigNumber from "bignumber.js";
 import JSBI from "jsbi";
+import { computePriceImpact } from "../utils/compute-price-impact";
 
 export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;
@@ -25,6 +26,7 @@ export interface BuildTradeReturn {
     amountInMax?: string;
     path: string[];
   };
+  priceImpact: Percent;
 }
 
 /**
@@ -47,6 +49,7 @@ interface RouterOptions {
   protocols?: Protocols[];
   network?: Networks;
   shouldUseBackend?: boolean;
+  maxHops?: number;
 }
 
 /**
@@ -76,6 +79,7 @@ export class Router {
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
   private _protocols: Protocols[];
+  private _maxHops = 2;
 
   /**
    * Initializes a new instance of the Router with configurations for connecting to a specified backend and retrieving pair exchange information.
@@ -107,6 +111,7 @@ export class Router {
     );
     this._quoteProvider = new QuoteProvider();
     this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
+    this._maxHops = options.maxHops || 2;
   }
 
   /**
@@ -484,7 +489,7 @@ export class Router {
       [],
       [],
       tokenIn,
-      2
+      this._maxHops
     );
 
     return routes;
@@ -661,12 +666,19 @@ export class Router {
         path: routeCurrency.path.map((token) => token.address),
       };
 
+      const priceImpact = computePriceImpact(
+        route.midPrice,
+        amountCurrency,
+        quoteCurrency
+      );
+
       return {
         amountCurrency,
         quoteCurrency,
         tradeType,
         routeCurrency,
         trade,
+        priceImpact,
       };
     } else {
       const quoteCurrency = CurrencyAmount.fromFractionalAmount(
@@ -699,12 +711,19 @@ export class Router {
         path: routeCurrency.path.map((token) => token.address),
       };
 
+      const priceImpact = computePriceImpact(
+        route.midPrice,
+        quoteCurrency,
+        amountCurrency
+      );
+
       return {
         amountCurrency,
         quoteCurrency,
         tradeType,
         routeCurrency,
         trade,
+        priceImpact,
       };
     }
   }
