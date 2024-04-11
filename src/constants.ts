@@ -35,3 +35,4 @@ export const BASIS_POINTS = JSBI.BigInt(10000);
 
 export const ZERO_PERCENT = new Percent(ZERO);
 export const ONE_HUNDRED_PERCENT = new Percent(ONE);
+export const BIPS_BASE = 10_000;

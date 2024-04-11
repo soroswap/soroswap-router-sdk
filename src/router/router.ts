@@ -669,7 +669,8 @@ export class Router {
       const priceImpact = computePriceImpact(
         route.midPrice,
         amountCurrency,
-        quoteCurrency
+        quoteCurrency,
+        trade.path
       );
 
       return {
@@ -714,7 +715,8 @@ export class Router {
       const priceImpact = computePriceImpact(
         route.midPrice,
         quoteCurrency,
-        amountCurrency
+        amountCurrency,
+        trade.path
       );
 
       return {

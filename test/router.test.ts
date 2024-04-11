@@ -80,8 +80,6 @@ describe("Router", () => {
       TradeType.EXACT_INPUT
     );
 
-    console.log(exactInput?.priceImpact.toFixed(2));
-
     expect(exactInput?.trade.path).toEqual(["XLM_ADDRESS", "USDC_ADDRESS"]);
 
     const exactOutput = await router.route(
