@@ -3,6 +3,7 @@ import { Protocols } from "../constants";
 import { CurrencyAmount, Pair, Token } from "../entities";
 import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
 import { SorobanContextType } from "../utils/contractInvoke/types";
+import { parseScval } from "../utils/parseScvalAddress";
 /**
  * @ignore
  * Represents a pair as returned from the API, including token addresses and reserves.
@@ -136,7 +137,7 @@ export class PairProvider {
         sorobanContext,
       });
 
-      const pairAddress = scValToNative(response as xdr.ScVal) as string;
+      const pairAddress = parseScval(response as xdr.ScVal) as string;
 
       if (!pairAddress) return null;
 
@@ -159,7 +160,7 @@ export class PairProvider {
         sorobanContext,
       });
 
-      const token0String: string = scValToNative(token0_scval as xdr.ScVal);
+      const token0String: string = parseScval(token0_scval as xdr.ScVal);
 
       const token1_scval = await contractInvoke({
         contractAddress: pairAddress,
@@ -167,7 +168,7 @@ export class PairProvider {
         args: [],
         sorobanContext,
       });
-      const token1String: string = scValToNative(token1_scval as xdr.ScVal);
+      const token1String: string = parseScval(token1_scval as xdr.ScVal);
 
       const token0 = new Token(this._network, token0String, 7);
       const token1 = new Token(this._network, token1String, 7);
