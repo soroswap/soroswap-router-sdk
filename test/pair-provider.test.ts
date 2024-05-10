@@ -8,18 +8,13 @@ describe("PairProvider", () => {
   const factoryAddress = "FACTORY_ADDRESS";
 
   test("getAllPairs Calls Backend When Is Testnet And Backend Is Working", async () => {
-    const pairProvider = new PairProvider(
-      Networks.TESTNET,
-      "https://api.example.com",
-      "api-key",
-      20,
-      true
-    );
+    const pairProvider = new PairProvider({
+      network: Networks.TESTNET,
+      cacheInSeconds: 20,
+      getPairsFn: async () => [],
+    });
 
-    const getPairsFromBackendMock = jest.spyOn(
-      pairProvider,
-      "getPairsFromBackend"
-    );
+    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
 
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,
@@ -37,25 +32,21 @@ describe("PairProvider", () => {
     );
 
     // Verify that getPairsFromBackend and getPairFromBlockchain have been called as expected
-    expect(getPairsFromBackendMock).toHaveBeenCalledWith([Protocols.SOROSWAP]);
     expect(getPairsFromBackendMock).toHaveBeenCalledTimes(1);
 
     expect(getPairFromBlockchainMock).toHaveBeenCalledTimes(0);
   });
 
   test("getAllPairs Fallbacks To getPairFromBlockchain When Backend Fails And Chain Is Testnet", async () => {
-    const pairProvider = new PairProvider(
-      Networks.TESTNET,
-      "https://api.example.com",
-      "api-key",
-      20,
-      true
-    );
+    const pairProvider = new PairProvider({
+      cacheInSeconds: 20,
+      network: Networks.TESTNET,
+      getPairsFn: async () => {
+        throw new Error("Simulated error");
+      },
+    });
 
-    const getPairsFromBackendMock = jest.spyOn(
-      pairProvider,
-      "getPairsFromBackend"
-    );
+    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,
       "getPairFromBlockchain"
@@ -73,7 +64,6 @@ describe("PairProvider", () => {
     );
 
     // Verify that getPairsFromBackend and getPairFromBlockchain have been called as expected
-    expect(getPairsFromBackendMock).toHaveBeenCalledWith([Protocols.SOROSWAP]);
     expect(getPairsFromBackendMock).toHaveBeenCalledTimes(1);
 
     expect(getPairFromBlockchainMock).toHaveBeenCalledWith(
@@ -87,18 +77,13 @@ describe("PairProvider", () => {
 
   test("getAllPairs Fallbacks To getPairFromBlockchain When Network Is Not Testnet", async () => {
     // using standalone chain id
-    const pairProvider = new PairProvider(
-      Networks.STANDALONE,
-      "https://api.example.com",
-      "api-key",
-      20,
-      true
-    );
+    const pairProvider = new PairProvider({
+      cacheInSeconds: 20,
+      network: Networks.STANDALONE,
+      getPairsFn: async () => [],
+    });
 
-    const getPairsFromBackendMock = jest.spyOn(
-      pairProvider,
-      "getPairsFromBackend"
-    );
+    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
 
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,

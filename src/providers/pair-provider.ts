@@ -26,6 +26,12 @@ export const networkToName: { [key: string]: string } = {
   [Networks.PUBLIC]: "MAINNET",
 };
 
+interface PairProviderOptions {
+  network: Networks;
+  cacheInSeconds: number;
+  getPairsFn?: () => Promise<Pair[]>;
+}
+
 /**
  * Provides functionality to fetch and cache pairs from a backend API, based on the specified blockchain network.
  *
@@ -35,77 +41,23 @@ export const networkToName: { [key: string]: string } = {
  */
 export class PairProvider {
   private _network: Networks;
-  private _backendUrl: string;
-  private _backendApiKey: string;
   private _cache: {
     [x: string]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
-  private _shouldUseBackend: boolean;
+  public getPairsFn?: () => Promise<Pair[]>;
+
   /**
    * Initializes a new instance of the PairProvider.
    *
    * @param network The blockchain network ID to operate on.
-   * @param backendUrl The backend URL used to fetch pair information.
-   * @param backendApiKey The API key for authenticating with the backend.
    * @param cacheInSeconds (Optional) The time in seconds to cache pair data, defaulting to 20 seconds.
    */
-  constructor(
-    network: Networks,
-    backendUrl: string,
-    backendApiKey: string,
-    cacheInSeconds: number,
-    shouldUseBackend: boolean
-  ) {
-    this._network = network;
-    this._backendUrl = backendUrl;
-    this._backendApiKey = backendApiKey;
-    this._cacheInSeconds = cacheInSeconds;
+  constructor(opts: PairProviderOptions) {
+    this._network = opts.network;
+    this._cacheInSeconds = opts.cacheInSeconds;
+    this.getPairsFn = opts.getPairsFn;
     this._cache = {};
-    this._shouldUseBackend = shouldUseBackend;
-  }
-
-  /**
-   * Fetches all pairs from the backend API, caching them to reduce API calls. If cached pairs are still valid, returns them instead of fetching anew.
-   *
-   * @param protocols (Optional) The protocols to fetch pairs for, defaulting to SOROSWAP.
-   * @returns A promise that resolves to an array of Pair instances representing all pairs fetched from the backend, or an empty array in case of an error.
-   */
-  public async getPairsFromBackend(
-    protocols: Protocols[] = [Protocols.SOROSWAP]
-  ): Promise<Pair[]> {
-    const networkName = networkToName[this._network];
-
-    const aggProtocols = protocols.reduce(
-      (acc, protocol) => acc + `&protocols=${protocol}`,
-      ""
-    );
-
-    let endpointUrl = `${this._backendUrl}/pairs/all?network=${networkName}${aggProtocols}`;
-
-    const response = await fetch(endpointUrl, {
-      method: "POST",
-      headers: {
-        apiKey: this._backendApiKey,
-        "Content-Type": "application/json",
-      },
-    });
-
-    const apiPairs: PairFromApi[] = await response.json();
-
-    const allPairs = apiPairs.map((pair) => {
-      const token0 = new Token(this._network, pair.token0, 7);
-      const token1 = new Token(this._network, pair.token1, 7);
-
-      const newPair = new Pair(
-        CurrencyAmount.fromRawAmount(token0, pair.reserve0),
-        CurrencyAmount.fromRawAmount(token1, pair.reserve1)
-      );
-
-      return newPair;
-    });
-
-    return allPairs;
   }
 
   /**
@@ -233,10 +185,10 @@ export class PairProvider {
     if (
       (this._network === Networks.TESTNET ||
         this._network === Networks.PUBLIC) &&
-      this._shouldUseBackend
+      this.getPairsFn
     ) {
       try {
-        const pairs = await this.getPairsFromBackend(protocols);
+        const pairs = await this.getPairsFn();
 
         this._cache[cacheKey] = { pairs, timestamp: Date.now() };
 
