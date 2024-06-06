@@ -7,7 +7,7 @@ import {
 import { Currency, Token, Pair, Route, Percent } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
 import { log } from "../utils/log";
-import { PairProvider } from "../providers/pair-provider";
+import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import { Protocols, TradeType, Networks } from "../constants";
 import { SorobanContextType } from "../utils/contractInvoke/types";
 import BigNumber from "bignumber.js";
@@ -47,7 +47,7 @@ interface RouterOptions {
   protocols?: Protocols[];
   network?: Networks;
   maxHops?: number;
-  getPairsFn?: () => Promise<Pair[]>;
+  getPairsFn?: () => Promise<PairFromApi[]>;
 }
 
 /**

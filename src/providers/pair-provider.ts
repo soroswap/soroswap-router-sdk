@@ -9,10 +9,10 @@ import { parseScval } from "../utils/parseScvalAddress";
  * Represents a pair as returned from the API, including token addresses and reserves.
  */
 export interface PairFromApi {
-  token0: string;
-  token1: string;
-  reserve0: string;
-  reserve1: string;
+  tokenA: string;
+  tokenB: string;
+  reserveA: string;
+  reserveB: string;
 }
 
 /**
@@ -29,7 +29,7 @@ export const networkToName: { [key: string]: string } = {
 interface PairProviderOptions {
   network: Networks;
   cacheInSeconds: number;
-  getPairsFn?: () => Promise<Pair[]>;
+  getPairsFn?: () => Promise<PairFromApi[]>;
 }
 
 /**
@@ -45,7 +45,7 @@ export class PairProvider {
     [x: string]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
-  public getPairsFn?: () => Promise<Pair[]>;
+  public getPairsFn?: () => Promise<PairFromApi[]>;
 
   /**
    * Initializes a new instance of the PairProvider.
@@ -190,9 +190,21 @@ export class PairProvider {
       try {
         const pairs = await this.getPairsFn();
 
-        this._cache[cacheKey] = { pairs, timestamp: Date.now() };
+        const parsedPairs = pairs.map((pair) => {
+          const token0 = new Token(this._network, pair.tokenA, 7);
+          const token1 = new Token(this._network, pair.tokenB, 7);
 
-        return pairs;
+          const pairInstance = new Pair(
+            CurrencyAmount.fromRawAmount(token0, pair.reserveA),
+            CurrencyAmount.fromRawAmount(token1, pair.reserveB)
+          );
+
+          return pairInstance;
+        });
+
+        this._cache[cacheKey] = { pairs: parsedPairs, timestamp: Date.now() };
+
+        return parsedPairs;
       } catch (error) {
         return getFromBlockchain();
       }
