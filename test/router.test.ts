@@ -27,8 +27,6 @@ const createPair = (
 
 const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
   return new Router({
-    backendUrl: "https://my-backend.com/",
-    backendApiKey: "my-api-key",
     pairsCacheInSeconds: 20,
     protocols: protocols,
     network: Networks.TESTNET,

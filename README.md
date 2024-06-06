@@ -1,16 +1,17 @@
 # Soroswap Router SDK
 
-[![npm version](https://badge.fury.io/js/soroswap-router-sdk.svg)](https://badge.fury.io/js/soroswap-router-sdk) 
+[![npm version](https://badge.fury.io/js/soroswap-router-sdk.svg)](https://badge.fury.io/js/soroswap-router-sdk)
 
 This repository contains routing logic for the Soroswap.Finance protocol.
 
 It searches for the most efficient way to swap token A for token B, considering the reserves available in the protocol's liquidity pools.
 
 **Useful links:**
-- Documentation: https://soroswap-router-sdk.soroswap.finance/ 
+
+- Documentation: https://soroswap-router-sdk.soroswap.finance/
 - NPM Package: https://www.npmjs.com/package/soroswap-router-sdk
 - Github Repo: https://github.com/soroswap/soroswap-router-sdk
-- [Soroswap.Finance Discord Server] (https://discord.gg/QaezKEWXqX)
+- [Soroswap.Finance Discord Server](https://discord.gg/QaezKEWXqX)
 
 ## Install
 
@@ -57,8 +58,6 @@ const USDC_TOKEN = new Token(
 const amount = 10000000;
 
 const router = new Router({
-  backendUrl: "https://my-backend.com/", //soroswap backend
-  backendApiKey: "my-api-key", // soroswap backend api key
   pairsCacheInSeconds: 20, // pairs cache duration
   protocols: [Protocols.SOROSWAP], // protocols to be used
   network: Networks.TESTNET, // network to be used
@@ -77,8 +76,11 @@ console.log(route.trade.path);
 
 //Output: ['0x...', '0x...', '0x...']
 ```
+
 ## Document
+
 1.- Generate Documentation
+
 ```
 bash docker/run.sh
 yarn

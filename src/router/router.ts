@@ -43,13 +43,11 @@ export type V2RouteWithValidQuote = {
 } | null;
 
 interface RouterOptions {
-  backendUrl: string;
-  backendApiKey: string;
   pairsCacheInSeconds?: number;
   protocols?: Protocols[];
   network?: Networks;
-  shouldUseBackend?: boolean;
   maxHops?: number;
+  getPairsFn?: () => Promise<Pair[]>;
 }
 
 /**
@@ -62,8 +60,6 @@ interface RouterOptions {
  * const tradeType = TradeType.EXACT_INPUT;
  * 
  * const router = new Router({
-    backendUrl: "https://my-backend.com/",
-    backendApiKey: "my-api-key",
     pairsCacheInSeconds: 20,
     protocols: [Protocols.SOROSWAP],
     network: Networks.TESTNET,
@@ -87,28 +83,22 @@ export class Router {
    * Example:
    * ```ts
    * const router = new Router({
-      backendUrl: "https://my-backend.com/",
-      backendApiKey: "my-api-key",
       pairsCacheInSeconds: 20,
       protocols: [Protocols.SOROSWAP],
       network: Networks.TESTNET,
     })
    * ```
    *
-   * @param backendUrl The backend URL used to fetch pair and quote information.
-   * @param backendApiKey The API key for authenticating with the backend.
    * @param pairsCacheInSeconds (Optional) The time in seconds to cache pair data.
    * @param network (Optional) The blockchain network ID to operate on. Defaults to TESTNET if not provided.
    */
   constructor(options: RouterOptions) {
     this._network = options.network || Networks.TESTNET;
-    this._pairProvider = new PairProvider(
-      this._network,
-      options.backendUrl,
-      options.backendApiKey,
-      options.pairsCacheInSeconds || 20,
-      options.shouldUseBackend ?? true
-    );
+    this._pairProvider = new PairProvider({
+      network: this._network,
+      cacheInSeconds: options.pairsCacheInSeconds || 20,
+      getPairsFn: options.getPairsFn,
+    });
     this._quoteProvider = new QuoteProvider();
     this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
     this._maxHops = options.maxHops || 2;
