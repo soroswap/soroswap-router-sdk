@@ -1,18 +1,18 @@
+import BigNumber from "bignumber.js";
+import JSBI from "jsbi";
 import _ from "lodash";
+import { Networks, Protocols, TradeType } from "../constants";
+import { Currency, Pair, Percent, Route, Token } from "../entities";
+import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import {
   QuoteProvider,
   V2Route,
   V2RouteWithQuotes,
 } from "../providers/quote-provider";
-import { Currency, Token, Pair, Route, Percent } from "../entities";
 import { CurrencyAmount } from "../utils/amounts";
-import { log } from "../utils/log";
-import { PairFromApi, PairProvider } from "../providers/pair-provider";
-import { Protocols, TradeType, Networks } from "../constants";
-import { SorobanContextType } from "../utils/contractInvoke/types";
-import BigNumber from "bignumber.js";
-import JSBI from "jsbi";
 import { computePriceImpact } from "../utils/compute-price-impact";
+import { SorobanContextType } from "../utils/contractInvoke/types";
+import { log } from "../utils/log";
 
 export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;
@@ -224,7 +224,9 @@ export class Router {
   public async routeSplit(
     amount: CurrencyAmount,
     quoteCurrency: Currency,
-    tradeType: TradeType
+    tradeType: TradeType,
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
   ) {
     const parts = 10;
 
@@ -243,6 +245,8 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
+    let routeArray: any[] = [];
+
     for (let i = 0; i < this._protocols.length; i++) {
       for (let j = 0; j < partsArray.length; j++) {
         const part = partsArray[j];
@@ -255,7 +259,9 @@ export class Router {
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            [this._protocols[i]]
+            [this._protocols[i]],
+            factoryAddress,
+            sorobanContext
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
@@ -264,11 +270,15 @@ export class Router {
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            [this._protocols[i]]
+            [this._protocols[i]],
+            factoryAddress,
+            sorobanContext
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
         }
+
+        routeArray.push(route);
 
         paths[i][j + 1] = route?.trade?.path || [];
       }
@@ -280,16 +290,26 @@ export class Router {
     );
 
     return {
-      totalAmount,
-      distribution: distribution
-        .map((amount, index) => {
+      amountCurrency: amount,
+      priceImpact: routeArray[0].priceImpact,
+      quoteCurrency,
+      routeCurrency: routeArray[0].routeCurrency,
+      trade: {
+        amountIn: amount.quotient.toString(),
+        amountOutMin: String(totalAmount),
+        path: paths[0][parts],
+        distribution: distribution.map((amount, index) => {
           return {
-            protocol: this._protocols[index],
-            amount: amounts[index][amount],
+            protocol_id: this._protocols[index],
+            // amount: amounts[index][amount],
             path: paths[index][amount],
+            parts: parts,
+            is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
           };
-        })
-        .filter((distribution) => distribution.amount > 0),
+        }),
+        // .filter((distribution) => distribution.amount > 0),
+      },
+      tradeType,
     };
   }
 
