@@ -3,7 +3,7 @@ import JSBI from "jsbi";
 import _ from "lodash";
 import { Networks, Protocols, TradeType } from "../constants";
 import { Currency, Pair, Percent, Route, Token } from "../entities";
-import { GetPairsFns, PairProvider } from "../providers/pair-provider";
+import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import {
   QuoteProvider,
   V2Route,
@@ -13,6 +13,13 @@ import { CurrencyAmount } from "../utils/amounts";
 import { computePriceImpact } from "../utils/compute-price-impact";
 import { SorobanContextType } from "../utils/contractInvoke/types";
 import { log } from "../utils/log";
+
+export interface GetPairsFn {
+  protocol: Protocols;
+  fn: () => Promise<PairFromApi[]>;
+}
+
+export type GetPairsFns = GetPairsFn[];
 
 export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;

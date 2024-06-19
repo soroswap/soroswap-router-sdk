@@ -4,6 +4,7 @@ import { CurrencyAmount, Pair, Token } from "../entities";
 import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
 import { SorobanContextType } from "../utils/contractInvoke/types";
 import { parseScval } from "../utils/parseScvalAddress";
+import { GetPairsFns } from "../router/router";
 /**
  * @ignore
  * Represents a pair as returned from the API, including token addresses and reserves.
@@ -26,13 +27,6 @@ export const networkToName: { [key: string]: string } = {
   [Networks.FUTURENET]: "FUTURENET",
   [Networks.PUBLIC]: "MAINNET",
 };
-
-export interface GetPairsFn {
-  protocol: Protocols;
-  fn: () => Promise<PairFromApi[]>;
-}
-
-export type GetPairsFns = GetPairsFn[];
 
 interface PairProviderOptions {
   network: Networks;
