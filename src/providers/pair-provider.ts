@@ -13,6 +13,7 @@ export interface PairFromApi {
   tokenB: string;
   reserveA: string;
   reserveB: string;
+  protocol?: Protocols;
 }
 
 /**
@@ -26,10 +27,17 @@ export const networkToName: { [key: string]: string } = {
   [Networks.PUBLIC]: "MAINNET",
 };
 
+export interface GetPairsFn {
+  protocol: Protocols;
+  fn: () => Promise<PairFromApi[]>;
+}
+
+export type GetPairsFns = GetPairsFn[];
+
 interface PairProviderOptions {
   network: Networks;
   cacheInSeconds: number;
-  getPairsFn?: () => Promise<PairFromApi[]>;
+  getPairsFns?: GetPairsFns;
 }
 
 /**
@@ -45,7 +53,7 @@ export class PairProvider {
     [x: string]: { pairs: Pair[]; timestamp: number };
   };
   private _cacheInSeconds: number;
-  public getPairsFn?: () => Promise<PairFromApi[]>;
+  public getPairsFns?: GetPairsFns;
 
   /**
    * Initializes a new instance of the PairProvider.
@@ -56,7 +64,7 @@ export class PairProvider {
   constructor(opts: PairProviderOptions) {
     this._network = opts.network;
     this._cacheInSeconds = opts.cacheInSeconds;
-    this.getPairsFn = opts.getPairsFn;
+    this.getPairsFns = opts.getPairsFns;
     this._cache = {};
   }
 
@@ -185,10 +193,21 @@ export class PairProvider {
     if (
       (this._network === Networks.TESTNET ||
         this._network === Networks.PUBLIC) &&
-      this.getPairsFn
+      this.getPairsFns &&
+      this.getPairsFns.length > 0
     ) {
       try {
-        const pairs = await this.getPairsFn();
+        const protocolsFns = this.getPairsFns.filter((fn) =>
+          sortedProtocols.includes(fn.protocol)
+        );
+
+        if (protocolsFns.length === 0) return getFromBlockchain();
+
+        const result = await Promise.all(
+          protocolsFns.map(async (fn) => await fn.fn())
+        );
+
+        const pairs = result.flat();
 
         const parsedPairs = pairs.map((pair) => {
           const token0 = new Token(this._network, pair.tokenA, 7);

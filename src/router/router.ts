@@ -3,7 +3,7 @@ import JSBI from "jsbi";
 import _ from "lodash";
 import { Networks, Protocols, TradeType } from "../constants";
 import { Currency, Pair, Percent, Route, Token } from "../entities";
-import { PairFromApi, PairProvider } from "../providers/pair-provider";
+import { GetPairsFns, PairProvider } from "../providers/pair-provider";
 import {
   QuoteProvider,
   V2Route,
@@ -47,7 +47,7 @@ interface RouterOptions {
   protocols?: Protocols[];
   network?: Networks;
   maxHops?: number;
-  getPairsFn?: () => Promise<PairFromApi[]>;
+  getPairsFns?: GetPairsFns;
 }
 
 /**
@@ -97,7 +97,7 @@ export class Router {
     this._pairProvider = new PairProvider({
       network: this._network,
       cacheInSeconds: options.pairsCacheInSeconds || 20,
-      getPairsFn: options.getPairsFn,
+      getPairsFns: options.getPairsFns,
     });
     this._quoteProvider = new QuoteProvider();
     this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
