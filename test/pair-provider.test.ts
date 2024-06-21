@@ -11,10 +11,17 @@ describe("PairProvider", () => {
     const pairProvider = new PairProvider({
       network: Networks.TESTNET,
       cacheInSeconds: 20,
-      getPairsFn: async () => [],
+      getPairsFns: [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [],
+        },
+      ],
     });
 
-    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
+    const getPairs = pairProvider.getPairsFns?.[0];
+
+    const getPairsFromBackendMock = jest.spyOn(getPairs!, "fn");
 
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,
@@ -41,12 +48,18 @@ describe("PairProvider", () => {
     const pairProvider = new PairProvider({
       cacheInSeconds: 20,
       network: Networks.TESTNET,
-      getPairsFn: async () => {
-        throw new Error("Simulated error");
-      },
+      getPairsFns: [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [],
+        },
+      ],
     });
 
-    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
+    const getPairs = pairProvider.getPairsFns?.[0];
+
+    const getPairsFromBackendMock = jest.spyOn(getPairs!, "fn");
+
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,
       "getPairFromBlockchain"
@@ -80,10 +93,17 @@ describe("PairProvider", () => {
     const pairProvider = new PairProvider({
       cacheInSeconds: 20,
       network: Networks.STANDALONE,
-      getPairsFn: async () => [],
+      getPairsFns: [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [],
+        },
+      ],
     });
 
-    const getPairsFromBackendMock = jest.spyOn(pairProvider, "getPairsFn");
+    const getPairs = pairProvider.getPairsFns?.[0];
+
+    const getPairsFromBackendMock = jest.spyOn(getPairs!, "fn");
 
     const getPairFromBlockchainMock = jest.spyOn(
       pairProvider,

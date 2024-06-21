@@ -252,7 +252,7 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
-    let routeArray: any[] = [];
+    let routeArray: (BuildTradeReturn | null)[] = [];
 
     for (let i = 0; i < this._protocols.length; i++) {
       for (let j = 0; j < partsArray.length; j++) {
@@ -298,9 +298,9 @@ export class Router {
 
     return {
       amountCurrency: amount,
-      priceImpact: routeArray[0].priceImpact,
+      priceImpact: routeArray[0]?.priceImpact,
       quoteCurrency,
-      routeCurrency: routeArray[0].routeCurrency,
+      routeCurrency: routeArray[0]?.routeCurrency,
       trade: {
         amountIn: amount.quotient.toString(),
         amountOutMin: String(totalAmount),
@@ -308,9 +308,9 @@ export class Router {
         distribution: distribution.map((amount, index) => {
           return {
             protocol_id: this._protocols[index],
-            // amount: amounts[index][amount],
+            amount: amounts[index][amount],
             path: paths[index][amount],
-            parts: parts,
+            parts: amount,
             is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
           };
         }),

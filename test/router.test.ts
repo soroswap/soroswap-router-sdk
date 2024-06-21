@@ -1,76 +1,67 @@
-import fetchMock from "jest-fetch-mock";
 import {
   CurrencyAmount,
-  Pair,
   Protocols,
   Router,
   Token,
   TradeType,
   Networks,
 } from "../src";
+import { GetPairsFns } from "../src/router/router";
+
+const createRouter = (
+  getPairsFns: GetPairsFns,
+  protocols: Protocols[] = [Protocols.SOROSWAP]
+) => {
+  return new Router({
+    pairsCacheInSeconds: 20,
+    protocols: protocols,
+    network: Networks.TESTNET,
+    getPairsFns,
+  });
+};
 
 const createToken = (address: string) => {
   return new Token(Networks.TESTNET, address, 7);
 };
 
-const createPair = (
-  token0: Token,
-  token1: Token,
-  reserve0: number,
-  reserve1: number
-) => {
-  return new Pair(
-    CurrencyAmount.fromRawAmount(token0, reserve0),
-    CurrencyAmount.fromRawAmount(token1, reserve1)
-  );
-};
-
-const createRouter = (protocols: Protocols[] = [Protocols.SOROSWAP]) => {
-  return new Router({
-    pairsCacheInSeconds: 20,
-    protocols: protocols,
-    network: Networks.TESTNET,
-  });
-};
-
 const XLM_TOKEN = createToken("XLM_ADDRESS");
 const USDC_TOKEN = createToken("USDC_ADDRESS");
-const DOGSTAR_TOKEN = createToken("DOGSTAR_ADDRESS");
-
-fetchMock.enableMocks();
-
-jest.mock("../src/providers/pair-provider", () => {
-  return {
-    PairProvider: jest.fn().mockImplementation(() => ({
-      getAllPairs: jest.fn().mockResolvedValue([]),
-    })),
-  };
-});
 
 describe("Router", () => {
   let amountCurrency: CurrencyAmount<Token>;
   let quoteCurrency: Token;
-  let PairProvider: jest.Mock;
 
   beforeEach(() => {
-    PairProvider = require("../src/providers/pair-provider").PairProvider;
-
-    PairProvider.mockImplementation(() => ({
-      getAllPairs: jest
-        .fn()
-        .mockResolvedValue([
-          createPair(XLM_TOKEN, USDC_TOKEN, 1000000, 1000000),
-          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000000, 1000000),
-          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000000, 1000000),
-        ]),
-    }));
-
-    amountCurrency = CurrencyAmount.fromRawAmount(XLM_TOKEN, 1000);
+    amountCurrency = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100);
     quoteCurrency = USDC_TOKEN;
   });
 
   it("Ensure Direct Routing Between Tokens With Equal Reserves", async () => {
-    const router = createRouter();
+    const router = createRouter([
+      {
+        protocol: Protocols.SOROSWAP,
+        fn: async () => [
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "USDC_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+          {
+            tokenA: "USDC_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+        ],
+      },
+    ]);
 
     const exactInput = await router.route(
       amountCurrency,
@@ -90,18 +81,32 @@ describe("Router", () => {
   });
 
   it("Select Optimal Route for Exact Input Based on Reserve Ratios", async () => {
-    PairProvider.mockImplementation(() => ({
-      getAllPairs: jest
-        .fn()
-        .mockResolvedValue([
-          createPair(XLM_TOKEN, USDC_TOKEN, 1000, 1000),
-          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000, 1000),
-          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000, 100),
-        ]),
-    }));
+    const router = createRouter([
+      {
+        protocol: Protocols.SOROSWAP,
+        fn: async () => [
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "USDC_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+          {
+            tokenA: "USDC_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "100",
+          },
+        ],
+      },
+    ]);
     //Should use xlm to dogstar to usdc, because 1 xlm = 1 dogstar and 1 dogstar = 10 usdc
-
-    const router = createRouter();
 
     const route = await router.route(
       amountCurrency,
@@ -117,18 +122,31 @@ describe("Router", () => {
   });
 
   it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
-    PairProvider.mockImplementation(() => ({
-      getAllPairs: jest
-        .fn()
-        .mockResolvedValue([
-          createPair(XLM_TOKEN, USDC_TOKEN, 10000, 10000),
-          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 10000, 1000),
-          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 10000, 10000),
-        ]),
-    }));
-    //Should use usdc to dogstar to xlm, because 1 usdc = 1 dogstar and 1 dogstar = 10 xlm
-
-    const router = createRouter();
+    const router = createRouter([
+      {
+        protocol: Protocols.SOROSWAP,
+        fn: async () => [
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "USDC_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+          {
+            tokenA: "XLM_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "100",
+          },
+          {
+            tokenA: "USDC_ADDRESS",
+            tokenB: "DOGSTAR_ADDRESS",
+            reserveA: "1000",
+            reserveB: "1000",
+          },
+        ],
+      },
+    ]);
 
     const route = await router.route(
       amountCurrency,
@@ -144,11 +162,12 @@ describe("Router", () => {
   });
 
   it("Handle Scenario With No Available Trading Pairs", async () => {
-    PairProvider.mockImplementation(() => ({
-      getAllPairs: jest.fn().mockResolvedValueOnce([]),
-    }));
-
-    const router = createRouter();
+    const router = createRouter([
+      {
+        protocol: Protocols.SOROSWAP,
+        fn: async () => [],
+      },
+    ]);
 
     const route = await router.route(
       amountCurrency,
@@ -159,18 +178,58 @@ describe("Router", () => {
     expect(route).toBeNull();
   });
 
-  it("Should Split Distribution And Select Optimal Route When Using Split Protocols For Exact Input", async () => {
-    PairProvider.mockImplementation(() => ({
-      getAllPairs: jest
-        .fn()
-        .mockResolvedValue([
-          createPair(XLM_TOKEN, USDC_TOKEN, 1000, 1000),
-          createPair(XLM_TOKEN, DOGSTAR_TOKEN, 1000, 1000),
-          createPair(USDC_TOKEN, DOGSTAR_TOKEN, 1000, 100),
-        ]),
-    }));
-
-    const router = createRouter([Protocols.SOROSWAP, Protocols.PHOENIX]);
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocols", async () => {
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "100",
+            },
+          ],
+        },
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "100",
+            },
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP, Protocols.PHOENIX]
+    );
 
     const route = await router.routeSplit(
       amountCurrency,
@@ -178,15 +237,41 @@ describe("Router", () => {
       TradeType.EXACT_INPUT
     );
 
+    /* 
+    Amount are:
+    [0,  82, 159, 224, 274, 319, 358, 393, 421, 449, 472]
+    and
+    [0,  82, 159, 224, 274, 319, 358, 393, 421, 449, 472]
+
+    Possible combinations:
+    (0 + 10) = 0 + 472 = 472
+    (1 + 9 ) = 82 + 449 = 531
+    (2 + 8 ) = 159 + 421 = 580
+    (3 + 7 ) = 224 + 393 = 617
+    (4 + 6 ) = 274 + 358 = 632
+    (5 + 5 ) = 319 + 319 = 638
+
+    The best combination is (5 + 5) = 319 + 319 = 638
+    */
+
     const requiredPath = ["XLM_ADDRESS", "DOGSTAR_ADDRESS", "USDC_ADDRESS"];
-    const requiredFinalAmount = 1534;
-    const requiredAmountPerProtocol = 767;
+    const requiredFinalAmount = "638";
+    const requiredAmountPerProtocol = 319;
 
-    expect(route.totalAmount).toEqual(requiredFinalAmount);
+    expect(route.trade.distribution[0].parts).toEqual(5);
+    expect(route.trade.distribution[1].parts).toEqual(5);
 
-    route?.distribution.forEach((d) => {
-      expect(d.path).toEqual(requiredPath);
-      expect(d.amount).toEqual(requiredAmountPerProtocol);
-    });
+    expect(route.trade.distribution[0].path).toEqual(requiredPath);
+    expect(route.trade.distribution[1].path).toEqual(requiredPath);
+
+    expect(route.trade.distribution[0].amount).toEqual(
+      requiredAmountPerProtocol
+    );
+
+    expect(route.trade.distribution[1].amount).toEqual(
+      requiredAmountPerProtocol
+    );
+
+    expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
   });
 });
