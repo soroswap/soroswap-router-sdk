@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import JSBI from "jsbi";
 import _ from "lodash";
 import { Networks, Protocols, TradeType } from "../constants";
-import { Currency, Pair, Percent, Route, Token } from "../entities";
+import { Currency, Fraction, Pair, Percent, Route, Token } from "../entities";
 import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import {
   QuoteProvider,
@@ -25,7 +25,6 @@ export interface BuildTradeReturn {
   amountCurrency: CurrencyAmount;
   quoteCurrency: CurrencyAmount;
   tradeType: TradeType;
-  routeCurrency: Route<Currency, Currency>;
   trade: {
     amountIn?: string;
     amountOut?: string;
@@ -232,11 +231,11 @@ export class Router {
     amount: CurrencyAmount,
     quoteCurrency: Currency,
     tradeType: TradeType,
+    parts: number = 10,
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
-    const parts = 10;
-
+    // console.log('🚀 « amount:', amount.toFixed());
     const interval = 100 / parts;
 
     const partsArray = Array.from(
@@ -249,6 +248,10 @@ export class Router {
       .map(() => new Array(parts + 1).fill(0));
 
     let paths: any[][] = new Array(this._protocols.length)
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
+    
+    let priceImpacts: any[][] = new Array(this._protocols.length)
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
@@ -287,6 +290,7 @@ export class Router {
 
         routeArray.push(route);
 
+        priceImpacts[i][j + 1] = route?.priceImpact || [];
         paths[i][j + 1] = route?.trade?.path || [];
       }
     }
@@ -296,25 +300,42 @@ export class Router {
       amounts
     );
 
+    const filteredDistribution = distribution.filter(value => value !== 0);
+  
+    // Calculate weighted average price impact
+    let totalPartsCount = 0;
+    let totalPartsValue = 0;
+    let weightedPriceImpact = new Fraction(0);
+  
+    filteredDistribution.forEach((parts, index) => {
+      if (parts > 0) {
+        const priceImpact = priceImpacts[index][parts];
+        weightedPriceImpact = weightedPriceImpact.add(priceImpact.multiply(parts));
+        totalPartsValue += parts;
+        totalPartsCount++;
+      }
+    });
+  
+    const averagePriceImpact = totalPartsValue > 0 ? weightedPriceImpact.divide(totalPartsValue) : new Fraction(0);
+  
+    const finalPriceImpact = new Percent(averagePriceImpact.numerator, averagePriceImpact.denominator);
+
     return {
       amountCurrency: amount,
-      priceImpact: routeArray[0]?.priceImpact,
+      priceImpact: finalPriceImpact,
       quoteCurrency,
-      routeCurrency: routeArray[0]?.routeCurrency,
       trade: {
         amountIn: amount.quotient.toString(),
         amountOutMin: String(totalAmount),
-        path: paths[0][parts],
-        distribution: distribution.map((amount, index) => {
+        path: [],
+        distribution: filteredDistribution.map((amount, index) => {
           return {
             protocol_id: this._protocols[index],
-            amount: amounts[index][amount],
             path: paths[index][amount],
             parts: amount,
             is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
           };
-        }),
-        // .filter((distribution) => distribution.amount > 0),
+        })
       },
       tradeType,
     };
@@ -694,7 +715,6 @@ export class Router {
         amountCurrency,
         quoteCurrency,
         tradeType,
-        routeCurrency,
         trade,
         priceImpact,
       };
@@ -740,7 +760,6 @@ export class Router {
         amountCurrency,
         quoteCurrency,
         tradeType,
-        routeCurrency,
         trade,
         priceImpact,
       };

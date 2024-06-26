@@ -1,8 +1,8 @@
-import invariant from "tiny-invariant";
 import JSBI from "jsbi";
-import { _997, _1000, ONE, ZERO, Networks } from "../constants";
-import { Token } from "./token";
+import invariant from "tiny-invariant";
+import { Networks, ONE, ZERO, _1000, _997 } from "../constants";
 import { CurrencyAmount, Price } from "./fractions";
+import { Token } from "./token";
 
 // see https://stackoverflow.com/a/41102306
 const CAN_SET_PROTOTYPE = "setPrototypeOf" in Object;
@@ -173,8 +173,8 @@ export class Pair {
       JSBI.divide(numerator, denominator) // JSBI.divide will round down by itself, which is desired
     );
 
-    if (JSBI.equal(outputAmount.quotient, ZERO)) {
-      throw new InsufficientInputAmountError();
+    if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
+      throw new InsufficientReservesError();
     }
 
     if (JSBI.equal(outputAmount.quotient, ZERO)) {
