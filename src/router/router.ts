@@ -303,7 +303,6 @@ export class Router {
     const filteredDistribution = distribution.filter(value => value !== 0);
   
     // Calculate weighted average price impact
-    let totalPartsCount = 0;
     let totalPartsValue = 0;
     let weightedPriceImpact = new Fraction(0);
   
@@ -312,7 +311,6 @@ export class Router {
         const priceImpact = priceImpacts[index][parts];
         weightedPriceImpact = weightedPriceImpact.add(priceImpact.multiply(parts));
         totalPartsValue += parts;
-        totalPartsCount++;
       }
     });
   

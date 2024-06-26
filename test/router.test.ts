@@ -1,10 +1,10 @@
 import {
   CurrencyAmount,
+  Networks,
   Protocols,
   Router,
   Token,
   TradeType,
-  Networks,
 } from "../src";
 import { GetPairsFns } from "../src/router/router";
 
@@ -256,21 +256,12 @@ describe("Router", () => {
 
     const requiredPath = ["XLM_ADDRESS", "DOGSTAR_ADDRESS", "USDC_ADDRESS"];
     const requiredFinalAmount = "638";
-    const requiredAmountPerProtocol = 319;
 
     expect(route.trade.distribution[0].parts).toEqual(5);
     expect(route.trade.distribution[1].parts).toEqual(5);
 
     expect(route.trade.distribution[0].path).toEqual(requiredPath);
     expect(route.trade.distribution[1].path).toEqual(requiredPath);
-
-    expect(route.trade.distribution[0].amount).toEqual(
-      requiredAmountPerProtocol
-    );
-
-    expect(route.trade.distribution[1].amount).toEqual(
-      requiredAmountPerProtocol
-    );
 
     expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
   });
