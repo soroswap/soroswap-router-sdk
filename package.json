@@ -1,6 +1,6 @@
 {
   "name": "soroswap-router-sdk",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "repository": "https://github.com/soroswap/soroswap-router-sdk.git",
   "author": "abstract829 <maxxii.1820@gmail.com>",
   "licence": "GPL-3.0-only",
@@ -16,6 +16,7 @@
   "module": "dist/soroswap-router-sdk.esm.js",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
+  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@stellar/stellar-sdk": "^11.3.0",
     "axios": "^1.6.5",
