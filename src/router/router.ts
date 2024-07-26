@@ -250,7 +250,7 @@ export class Router {
     let paths: any[][] = new Array(this._protocols.length)
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
-    
+
     let priceImpacts: any[][] = new Array(this._protocols.length)
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
@@ -300,23 +300,31 @@ export class Router {
       amounts
     );
 
-    const filteredDistribution = distribution.filter(value => value !== 0);
-  
+    const filteredDistribution = distribution.filter((value) => value !== 0);
+
     // Calculate weighted average price impact
     let totalPartsValue = 0;
     let weightedPriceImpact = new Fraction(0);
-  
+
     filteredDistribution.forEach((parts, index) => {
       if (parts > 0) {
         const priceImpact = priceImpacts[index][parts];
-        weightedPriceImpact = weightedPriceImpact.add(priceImpact.multiply(parts));
+        weightedPriceImpact = weightedPriceImpact.add(
+          priceImpact.multiply(parts)
+        );
         totalPartsValue += parts;
       }
     });
-  
-    const averagePriceImpact = totalPartsValue > 0 ? weightedPriceImpact.divide(totalPartsValue) : new Fraction(0);
-  
-    const finalPriceImpact = new Percent(averagePriceImpact.numerator, averagePriceImpact.denominator);
+
+    const averagePriceImpact =
+      totalPartsValue > 0
+        ? weightedPriceImpact.divide(totalPartsValue)
+        : new Fraction(0);
+
+    const finalPriceImpact = new Percent(
+      averagePriceImpact.numerator,
+      averagePriceImpact.denominator
+    );
 
     return {
       amountCurrency: amount,
@@ -325,6 +333,8 @@ export class Router {
       trade: {
         amountIn: amount.quotient.toString(),
         amountOutMin: String(totalAmount),
+        amountInMax: String(totalAmount),
+        amountOut: amount.quotient.toString(),
         path: [],
         distribution: filteredDistribution.map((amount, index) => {
           return {
@@ -333,7 +343,7 @@ export class Router {
             parts: amount,
             is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
           };
-        })
+        }),
       },
       tradeType,
     };
