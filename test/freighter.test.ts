@@ -9,14 +9,16 @@ import {
 import { GetPairsFns } from "../src/router/router";
 
 const createRouter = (
+  maxHops: number,
   getPairsFns: GetPairsFns,
-  protocols: Protocols[] = [Protocols.SOROSWAP]
+  protocols: Protocols[] = [Protocols.SOROSWAP],
 ) => {
   return new Router({
     pairsCacheInSeconds: 60,
     protocols: protocols,
     network: Networks.TESTNET,
     getPairsFns,
+    maxHops: maxHops,
   });
 };
 
@@ -36,8 +38,10 @@ describe("Router", () => {
     quoteCurrency = USDC_TOKEN;
   });
 
-  it("Ensure Direct Routing Between Tokens With Equal Reserves", async () => {
-    const router = createRouter([
+  it("100 XLM to USDC in Testnet Max Hops 5", async () => {
+    const router = createRouter(
+      5, //maxHops
+      [
       {
         protocol: Protocols.SOROSWAP,
         fn: async () => {
@@ -83,189 +87,37 @@ describe("Router", () => {
     // expect(exactOutput?.trade.path).toEqual(["USDC_ADDRESS", "XLM_ADDRESS"]);
   });
 
-  // it("Select Optimal Route for Exact Input Based on Reserve Ratios", async () => {
-  //   const router = createRouter([
-  //     {
-  //       protocol: Protocols.SOROSWAP,
-  //       fn: async () => [
-  //         {
-  //           tokenA: "XLM_ADDRESS",
-  //           tokenB: "USDC_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "1000",
-  //         },
-  //         {
-  //           tokenA: "XLM_ADDRESS",
-  //           tokenB: "DOGSTAR_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "1000",
-  //         },
-  //         {
-  //           tokenA: "USDC_ADDRESS",
-  //           tokenB: "DOGSTAR_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "100",
-  //         },
-  //       ],
-  //     },
-  //   ]);
-  //   //Should use xlm to dogstar to usdc, because 1 xlm = 1 dogstar and 1 dogstar = 10 usdc
+  it("100 XLM to USDC in Testnet Max Hops 1", async () => {
+    const router = createRouter(
+      1, //maxHops
+      [
+      {
+        protocol: Protocols.SOROSWAP,
+        fn: async () => {
+          const res = await fetch(
+            // this endpoint is used to get the pairs for Testnet which `Router` will used to determine conversion rate
+            new URL(
+              "https://info.soroswap.finance/api/pairs/plain?network=TESTNET",
+            ),
+          );
 
-  //   const route = await router.route(
-  //     amountCurrency,
-  //     quoteCurrency,
-  //     TradeType.EXACT_INPUT
-  //   );
+          const data = await res.json();
 
-  //   expect(route?.trade.path).toEqual([
-  //     "XLM_ADDRESS",
-  //     "DOGSTAR_ADDRESS",
-  //     "USDC_ADDRESS",
-  //   ]);
-  // });
+          return data;
+        },
+      },
+    ]);
 
-  // it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
-  //   const router = createRouter([
-  //     {
-  //       protocol: Protocols.SOROSWAP,
-  //       fn: async () => [
-  //         {
-  //           tokenA: "XLM_ADDRESS",
-  //           tokenB: "USDC_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "1000",
-  //         },
-  //         {
-  //           tokenA: "XLM_ADDRESS",
-  //           tokenB: "DOGSTAR_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "100",
-  //         },
-  //         {
-  //           tokenA: "USDC_ADDRESS",
-  //           tokenB: "DOGSTAR_ADDRESS",
-  //           reserveA: "1000",
-  //           reserveB: "1000",
-  //         },
-  //       ],
-  //     },
-  //   ]);
+    console.log("🚀 ~ it ~ router:", router)
 
-  //   const route = await router.route(
-  //     amountCurrency,
-  //     quoteCurrency,
-  //     TradeType.EXACT_OUTPUT
-  //   );
+    const route = await router.route(
+      currencyAmount,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+    );
+    console.log("🚀 ~ it ~ route:", route)
 
-  //   expect(route?.trade.path).toEqual([
-  //     "USDC_ADDRESS",
-  //     "DOGSTAR_ADDRESS",
-  //     "XLM_ADDRESS",
-  //   ]);
-  // });
+  });
 
-  // it("Handle Scenario With No Available Trading Pairs", async () => {
-  //   const router = createRouter([
-  //     {
-  //       protocol: Protocols.SOROSWAP,
-  //       fn: async () => [],
-  //     },
-  //   ]);
-
-  //   const route = await router.route(
-  //     amountCurrency,
-  //     quoteCurrency,
-  //     TradeType.EXACT_INPUT
-  //   );
-
-  //   expect(route).toBeNull();
-  // });
-
-  // it("Should Split Distribution And Select Optimal Route When Using Split Protocols", async () => {
-  //   const router = createRouter(
-  //     [
-  //       {
-  //         protocol: Protocols.SOROSWAP,
-  //         fn: async () => [
-  //           {
-  //             tokenA: "XLM_ADDRESS",
-  //             tokenB: "USDC_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "1000",
-  //           },
-  //           {
-  //             tokenA: "XLM_ADDRESS",
-  //             tokenB: "DOGSTAR_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "1000",
-  //           },
-  //           {
-  //             tokenA: "USDC_ADDRESS",
-  //             tokenB: "DOGSTAR_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "100",
-  //           },
-  //         ],
-  //       },
-  //       {
-  //         protocol: Protocols.PHOENIX,
-  //         fn: async () => [
-  //           {
-  //             tokenA: "XLM_ADDRESS",
-  //             tokenB: "USDC_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "1000",
-  //           },
-  //           {
-  //             tokenA: "XLM_ADDRESS",
-  //             tokenB: "DOGSTAR_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "1000",
-  //           },
-  //           {
-  //             tokenA: "USDC_ADDRESS",
-  //             tokenB: "DOGSTAR_ADDRESS",
-  //             reserveA: "1000",
-  //             reserveB: "100",
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //     [Protocols.SOROSWAP, Protocols.PHOENIX]
-  //   );
-
-  //   const route = await router.routeSplit(
-  //     amountCurrency,
-  //     quoteCurrency,
-  //     TradeType.EXACT_INPUT
-  //   );
-
-  //   /* 
-  //   Amount are:
-  //   [0,  82, 159, 224, 274, 319, 358, 393, 421, 449, 472]
-  //   and
-  //   [0,  82, 159, 224, 274, 319, 358, 393, 421, 449, 472]
-
-  //   Possible combinations:
-  //   (0 + 10) = 0 + 472 = 472
-  //   (1 + 9 ) = 82 + 449 = 531
-  //   (2 + 8 ) = 159 + 421 = 580
-  //   (3 + 7 ) = 224 + 393 = 617
-  //   (4 + 6 ) = 274 + 358 = 632
-  //   (5 + 5 ) = 319 + 319 = 638
-
-  //   The best combination is (5 + 5) = 319 + 319 = 638
-  //   */
-
-  //   const requiredPath = ["XLM_ADDRESS", "DOGSTAR_ADDRESS", "USDC_ADDRESS"];
-  //   const requiredFinalAmount = "638";
-
-  //   expect(route.trade.distribution[0].parts).toEqual(5);
-  //   expect(route.trade.distribution[1].parts).toEqual(5);
-
-  //   expect(route.trade.distribution[0].path).toEqual(requiredPath);
-  //   expect(route.trade.distribution[1].path).toEqual(requiredPath);
-
-  //   expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
-  // });
+  
 });
