@@ -130,24 +130,36 @@ export class Router {
     tradeType: TradeType,
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
+
   ) {
     if (tradeType === TradeType.EXACT_INPUT) {
-      return this.routeExactIn(
-        amount.currency,
-        quoteCurrency,
-        amount,
+      const routes: V2Route[] = await this._getAllRoutes(
+        amount.currency.wrapped,
+        quoteCurrency.wrapped,
         this._protocols,
         factoryAddress,
         sorobanContext
       );
+      return this.routeExactIn(
+        amount.currency,
+        quoteCurrency,
+        amount,
+        routes
+      );
     } else {
+      const routes: V2Route[] = await this._getAllRoutes(
+        quoteCurrency.wrapped,
+        amount.currency.wrapped,
+        this._protocols,
+        factoryAddress,
+        sorobanContext
+      );
+  
       return this.routeExactOut(
         quoteCurrency,
         amount.currency,
         amount,
-        this._protocols,
-        factoryAddress,
-        sorobanContext
+        routes
       );
     }
   }
@@ -255,6 +267,25 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
+      let routes: V2Route[] = [];
+      if(tradeType === TradeType.EXACT_INPUT) {
+        routes = await this._getAllRoutes(
+          amount.currency.wrapped,
+          quoteCurrency.wrapped,
+          this._protocols,
+          factoryAddress,
+          sorobanContext
+        );
+      } else {
+        routes = await this._getAllRoutes(
+          quoteCurrency.wrapped,
+          amount.currency.wrapped,
+          this._protocols,
+          factoryAddress,
+          sorobanContext
+        );
+      }
+
     let routeArray: (BuildTradeReturn | null)[] = [];
 
     for (let i = 0; i < this._protocols.length; i++) {
@@ -269,9 +300,7 @@ export class Router {
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            [this._protocols[i]],
-            factoryAddress,
-            sorobanContext
+            routes
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
@@ -280,9 +309,7 @@ export class Router {
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            [this._protocols[i]],
-            factoryAddress,
-            sorobanContext
+            routes
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
@@ -369,19 +396,9 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountIn: CurrencyAmount,
-    protocols: Protocols[],
-    factoryAddress?: string,
-    sorobanContext?: SorobanContextType
+    routes: V2Route[],
   ) {
-    const tokenIn = currencyIn.wrapped;
     const tokenOut = currencyOut.wrapped;
-    const routes = await this._getAllRoutes(
-      tokenIn,
-      tokenOut,
-      protocols,
-      factoryAddress,
-      sorobanContext
-    );
 
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
@@ -418,20 +435,9 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountOut: CurrencyAmount,
-    protocols: Protocols[],
-    factoryAddress?: string,
-    sorobanContext?: SorobanContextType
+    routes: V2Route[]
   ) {
     const tokenIn = currencyIn.wrapped;
-    const tokenOut = currencyOut.wrapped;
-
-    const routes = await this._getAllRoutes(
-      tokenIn,
-      tokenOut,
-      protocols,
-      factoryAddress,
-      sorobanContext
-    );
 
     const routeQuote = await this._findBestRouteExactOut(
       amountOut,
