@@ -86,3 +86,18 @@ bash docker/run.sh
 yarn
 yarn docs
 ```
+
+## Publish
+```
+bash docker/run.sh
+git config --global --add safe.directory /workspace
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+npm login
+
+yarn
+yarn build
+yarn publish
+```
+
+For beta versions you can use `yarn publish --tag beta`
