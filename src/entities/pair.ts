@@ -190,6 +190,30 @@ export class Pair {
     ];
   }
 
+  public getOutputAmountSoroswap(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getOutputAmountSoroswap");
+    invariant(this.involvesToken(inputAmount.currency), "TOKEN");
+    return this.getOutputAmount(inputAmount);
+  }
+
+  public getOutputAmountPhoenix(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getOutputAmountPhoenix");
+    invariant(this.involvesToken(inputAmount.currency), "TOKEN");
+    return this.getOutputAmount(inputAmount);
+  }
+
+  public getOutputAmountAquarius(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getOutputAmountSoroswap");
+    invariant(this.involvesToken(inputAmount.currency), "TOKEN");
+    return this.getOutputAmount(inputAmount);
+  }
+
   public getInputAmount(
     outputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
@@ -237,5 +261,29 @@ export class Pair {
         outputReserve.subtract(outputAmount)
       ),
     ];
+  }
+
+  public getInputAmountSoroswap(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getInputAmountSoroswap");
+    invariant(this.involvesToken(outputAmount.currency), "TOKEN");
+    return this.getInputAmount(outputAmount);
+  }
+
+  public getInputAmountPhoenix(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getInputAmountPhoenix");
+    invariant(this.involvesToken(outputAmount.currency), "TOKEN");
+    return this.getInputAmount(outputAmount);
+  }
+
+  public getInputAmountAquarius(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    console.log("getInputAmountAquarius");
+    invariant(this.involvesToken(outputAmount.currency), "TOKEN");
+    return this.getInputAmount(outputAmount);
   }
 }
