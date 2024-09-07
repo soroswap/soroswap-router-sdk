@@ -6,6 +6,7 @@ export { Networks } from "@stellar/stellar-sdk";
 export enum Protocols {
   SOROSWAP = "soroswap",
   PHOENIX = "phoenix",
+  AQUARIUS = "aquarius",
 }
 
 export enum TradeType {

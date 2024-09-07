@@ -154,7 +154,7 @@ export class Router {
         factoryAddress,
         sorobanContext
       );
-  
+
       return this.routeExactOut(
         quoteCurrency,
         amount.currency,
@@ -267,24 +267,24 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
-      let routes: V2Route[] = [];
-      if(tradeType === TradeType.EXACT_INPUT) {
-        routes = await this._getAllRoutes(
-          amount.currency.wrapped,
-          quoteCurrency.wrapped,
-          this._protocols,
-          factoryAddress,
-          sorobanContext
-        );
-      } else {
-        routes = await this._getAllRoutes(
-          quoteCurrency.wrapped,
-          amount.currency.wrapped,
-          this._protocols,
-          factoryAddress,
-          sorobanContext
-        );
-      }
+    let routes: V2Route[] = [];
+    if (tradeType === TradeType.EXACT_INPUT) {
+      routes = await this._getAllRoutes(
+        amount.currency.wrapped,
+        quoteCurrency.wrapped,
+        this._protocols,
+        factoryAddress,
+        sorobanContext
+      );
+    } else {
+      routes = await this._getAllRoutes(
+        quoteCurrency.wrapped,
+        amount.currency.wrapped,
+        this._protocols,
+        factoryAddress,
+        sorobanContext
+      );
+    }
 
     let routeArray: (BuildTradeReturn | null)[] = [];
 
@@ -300,7 +300,8 @@ export class Router {
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            routes
+            routes,
+            this._protocols[i]
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
@@ -309,7 +310,8 @@ export class Router {
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            routes
+            routes,
+            this._protocols[i]
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
@@ -397,13 +399,15 @@ export class Router {
     currencyOut: Currency,
     amountIn: CurrencyAmount,
     routes: V2Route[],
+    protocol: Protocols = Protocols.SOROSWAP
   ) {
     const tokenOut = currencyOut.wrapped;
 
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
       tokenOut,
-      routes
+      routes,
+      protocol
     );
 
     if (!routeQuote) return null;
@@ -435,14 +439,16 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountOut: CurrencyAmount,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocols = Protocols.SOROSWAP
   ) {
     const tokenIn = currencyIn.wrapped;
 
     const routeQuote = await this._findBestRouteExactOut(
       amountOut,
       tokenIn,
-      routes
+      routes,
+      protocol
     );
 
     if (!routeQuote) return null;
@@ -466,11 +472,12 @@ export class Router {
   private async _findBestRouteExactIn(
     amountIn: CurrencyAmount,
     tokenOut: Token,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocols = Protocols.SOROSWAP
   ): Promise<V2RouteWithValidQuote> {
     const {
       routesWithQuotes: quotesRaw,
-    } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes);
+    } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes, protocol);
 
     const bestQuote = await this._getBestQuote(
       routes,
@@ -493,11 +500,12 @@ export class Router {
   private async _findBestRouteExactOut(
     amountOut: CurrencyAmount,
     tokenIn: Token,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocols = Protocols.SOROSWAP
   ) {
     const {
       routesWithQuotes: quotesRaw,
-    } = await this._quoteProvider.getQuotesManyExactOut([amountOut], routes);
+    } = await this._quoteProvider.getQuotesManyExactOut([amountOut], routes, protocol);
 
     const bestQuote = await this._getBestQuote(
       routes,
@@ -618,8 +626,7 @@ export class Router {
     routeType: TradeType
   ) {
     log.debug(
-      `Got ${
-        _.filter(quotesRaw, ([_, quotes]) => !!quotes[0]).length
+      `Got ${_.filter(quotesRaw, ([_, quotes]) => !!quotes[0]).length
       } valid quotes from ${routes.length} possible routes.`
     );
 

@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import invariant from "tiny-invariant";
-import { Networks, ONE, ZERO, _1000, _997 } from "../constants";
+import { BASIS_POINTS, Networks, ONE, ZERO, _1000, _997 } from "../constants";
 import { CurrencyAmount, Price } from "./fractions";
 import { Token } from "./token";
 
@@ -37,6 +37,7 @@ export class InsufficientInputAmountError extends Error {
 
 export class Pair {
   public readonly liquidityToken: Token;
+  private fee: number;
   private readonly tokenAmounts: [CurrencyAmount<Token>, CurrencyAmount<Token>];
 
   public static getAddress(tokenA: Token, tokenB: Token): string {
@@ -45,7 +46,8 @@ export class Pair {
 
   public constructor(
     currencyAmountA: CurrencyAmount<Token>,
-    tokenAmountB: CurrencyAmount<Token>
+    tokenAmountB: CurrencyAmount<Token>,
+    fee: number = 0.003,
   ) {
     const tokenAmounts = currencyAmountA.currency.sortsBefore(
       tokenAmountB.currency
@@ -63,6 +65,7 @@ export class Pair {
       CurrencyAmount<Token>,
       CurrencyAmount<Token>
     ];
+    this.fee = fee;
   }
 
   /**
@@ -203,7 +206,44 @@ export class Pair {
   ): [CurrencyAmount<Token>, Pair] {
     console.log("getOutputAmountPhoenix");
     invariant(this.involvesToken(inputAmount.currency), "TOKEN");
-    return this.getOutputAmount(inputAmount);
+    if (
+      JSBI.equal(this.reserve0.quotient, ZERO) ||
+      JSBI.equal(this.reserve1.quotient, ZERO)
+    ) {
+      throw new InsufficientReservesError();
+    }
+    const inputReserve = this.reserveOf(inputAmount.currency);
+    const outputReserve = this.reserveOf(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+    const crossProduct = JSBI.multiply(
+      inputReserve.quotient,
+      outputReserve.quotient
+    );
+    const returnAmountBeforeTax = JSBI.subtract(
+      outputReserve.quotient,
+      JSBI.divide(
+        crossProduct,
+        JSBI.add(inputReserve.quotient, inputAmount.quotient)
+      )
+    );
+    const taxAmount = JSBI.divide(
+      JSBI.multiply(returnAmountBeforeTax, JSBI.BigInt(this.fee)),
+      BASIS_POINTS
+    );
+    const returnAmount = CurrencyAmount.fromRawAmount(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
+      JSBI.subtract(returnAmountBeforeTax, taxAmount)
+    );
+
+    // TODO: returnamount should be before tax
+    return [
+      returnAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(returnAmount)
+      ),
+    ];
   }
 
   public getOutputAmountAquarius(
@@ -211,7 +251,52 @@ export class Pair {
   ): [CurrencyAmount<Token>, Pair] {
     console.log("getOutputAmountSoroswap");
     invariant(this.involvesToken(inputAmount.currency), "TOKEN");
-    return this.getOutputAmount(inputAmount);
+    if (
+      JSBI.equal(this.reserve0.quotient, ZERO) ||
+      JSBI.equal(this.reserve1.quotient, ZERO)
+    ) {
+      throw new InsufficientReservesError();
+    }
+    const inputReserve = this.reserveOf(inputAmount.currency);
+
+    const outputReserve = this.reserveOf(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+
+    const numerator = JSBI.multiply(
+      inputAmount.quotient,
+      outputReserve.quotient
+    );
+
+    const denominator = JSBI.add(
+      inputReserve.quotient,
+      inputAmount.quotient
+    );
+    const outputAmountBeforeFee = JSBI.divide(numerator, denominator);
+
+    const feeToBeDeducted = JSBI.divide(JSBI.multiply(outputAmountBeforeFee, JSBI.BigInt(this.fee)), BASIS_POINTS);
+
+    const outputAmount = CurrencyAmount.fromRawAmount(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
+      JSBI.subtract(outputAmountBeforeFee, feeToBeDeducted)
+    );
+
+    if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
+      throw new InsufficientReservesError();
+    }
+
+    if (JSBI.equal(outputAmount.quotient, ZERO)) {
+      throw new InsufficientInputAmountError();
+    }
+    // TODO: returnamount should be before tax
+
+    return [
+      outputAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(outputAmount)
+      ),
+    ]
   }
 
   public getInputAmount(

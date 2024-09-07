@@ -101,3 +101,11 @@ yarn publish
 ```
 
 For beta versions you can use `yarn publish --tag beta`
+
+## Run tests
+
+```
+bash docker/run.sh
+yarn 
+yarn test
+```

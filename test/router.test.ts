@@ -265,4 +265,67 @@ describe("Router", () => {
 
     expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
   });
+
+  it.only("Should calculate optimal split distribution using protocol specific algorithms", async () => {
+
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "100",
+            },
+          ],
+        },
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "1000",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "DOGSTAR_ADDRESS",
+              reserveA: "1000",
+              reserveB: "100",
+            },
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP, Protocols.PHOENIX]
+    );
+
+    const route = await router.routeSplit(
+      amountCurrency,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+      2
+    );
+    console.log('🚀 ~ it.only ~ route:', route);
+  });
 });
