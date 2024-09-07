@@ -220,7 +220,7 @@ export class Pair {
       inputReserve.quotient,
       outputReserve.quotient
     );
-    const returnAmountBeforeTax = JSBI.subtract(
+    const outputAmountBeforeFee = JSBI.subtract(
       outputReserve.quotient,
       JSBI.divide(
         crossProduct,
@@ -228,22 +228,25 @@ export class Pair {
       )
     );
     const taxAmount = JSBI.divide(
-      JSBI.multiply(returnAmountBeforeTax, JSBI.BigInt(this.fee)),
+      JSBI.multiply(outputAmountBeforeFee, JSBI.BigInt(this.fee)),
       BASIS_POINTS
     );
-    const returnAmount = CurrencyAmount.fromRawAmount(
+    const outputAmount = CurrencyAmount.fromRawAmount(
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
-      JSBI.subtract(returnAmountBeforeTax, taxAmount)
+      JSBI.subtract(outputAmountBeforeFee, taxAmount)
     );
 
     // TODO: returnamount should be before tax
     return [
-      returnAmount,
+      outputAmount,
       new Pair(
         inputReserve.add(inputAmount),
-        outputReserve.subtract(returnAmount)
-      ),
-    ];
+        outputReserve.subtract(CurrencyAmount.fromRawAmount(
+          outputAmount.currency,
+          outputAmountBeforeFee)
+        )
+      )
+    ]
   }
 
   public getOutputAmountAquarius(
@@ -294,8 +297,11 @@ export class Pair {
       outputAmount,
       new Pair(
         inputReserve.add(inputAmount),
-        outputReserve.subtract(outputAmount)
-      ),
+        outputReserve.subtract(CurrencyAmount.fromRawAmount(
+          outputAmount.currency,
+          outputAmountBeforeFee)
+        )
+      )
     ]
   }
 
