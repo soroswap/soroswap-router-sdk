@@ -10,13 +10,15 @@ import { GetPairsFns } from "../src/router/router";
 
 const createRouter = (
   getPairsFns: GetPairsFns,
-  protocols: Protocols[] = [Protocols.SOROSWAP]
+  protocols: Protocols[] = [Protocols.SOROSWAP],
+  maxHops?: number,
 ) => {
   return new Router({
     pairsCacheInSeconds: 20,
     protocols: protocols,
     network: Networks.TESTNET,
     getPairsFns,
+    maxHops
   });
 };
 
@@ -26,7 +28,8 @@ const createToken = (address: string) => {
 
 const XLM_TOKEN = createToken("XLM_ADDRESS");
 const USDC_TOKEN = createToken("USDC_ADDRESS");
-
+const EURC_TOKEN = createToken("EURC_ADDRESS");
+const AQUA_TOKEN = createToken("AQUA_ADDRESS");
 describe("Router", () => {
   let amountCurrency: CurrencyAmount<Token>;
   let quoteCurrency: Token;
@@ -276,21 +279,9 @@ describe("Router", () => {
             {
               tokenA: "XLM_ADDRESS",
               tokenB: "USDC_ADDRESS",
-              reserveA: "1000",
-              reserveB: "1000",
-            },
-            {
-              tokenA: "XLM_ADDRESS",
-              tokenB: "DOGSTAR_ADDRESS",
-              reserveA: "1000",
-              reserveB: "1000",
-            },
-            {
-              tokenA: "USDC_ADDRESS",
-              tokenB: "DOGSTAR_ADDRESS",
-              reserveA: "1000",
-              reserveB: "100",
-            },
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            }
           ],
         },
         {
@@ -299,33 +290,76 @@ describe("Router", () => {
             {
               tokenA: "XLM_ADDRESS",
               tokenB: "USDC_ADDRESS",
-              reserveA: "1000",
-              reserveB: "1000",
-            },
-            {
-              tokenA: "XLM_ADDRESS",
-              tokenB: "DOGSTAR_ADDRESS",
-              reserveA: "1000",
-              reserveB: "1000",
-            },
-            {
-              tokenA: "USDC_ADDRESS",
-              tokenB: "DOGSTAR_ADDRESS",
-              reserveA: "1000",
-              reserveB: "100",
-            },
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30"
+            }
           ],
         },
       ],
       [Protocols.SOROSWAP, Protocols.PHOENIX]
     );
 
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000);
+    const parts = 10;
+
     const route = await router.routeSplit(
-      amountCurrency,
+      amountSplit,
       quoteCurrency,
       TradeType.EXACT_INPUT,
-      2
+      parts
     );
-    console.log('🚀 ~ it.only ~ route:', route);
+    expect(route).not.toBeNull();
+
+    // console.log('🚀 ~ it.only ~ routeSplit:', route?.trade);
+    // expect(route.trade.distribution[0].parts).toEqual(7);
+    // expect(route.trade.distribution[1].parts).toEqual(3);
+
   });
+
+  it.only("Should calculate optimal route without loosing precision", async () => {
+
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            }, {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "EURC_ADDRESS",
+              reserveA: "181515657088",
+              reserveB: "163462214604",
+            }, {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "34072360177",
+              reserveB: "5167239439236"
+            }
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP],
+      3
+    );
+
+    const routeAmount = CurrencyAmount.fromRawAmount(AQUA_TOKEN, 1000000_0000000);
+    const quoteCurrency = EURC_TOKEN;
+    const route = await router.route(
+      routeAmount,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+    );
+
+    console.log('🚀 ~ it.only ~ route:', route);
+    console.log('🚀 ~ it.only ~ route:', route?.quoteCurrency.quotient.toString());
+
+    // expect quotient to be 1825286175
+    expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286175");
+  });
+
 });

@@ -47,7 +47,7 @@ export class Pair {
   public constructor(
     currencyAmountA: CurrencyAmount<Token>,
     tokenAmountB: CurrencyAmount<Token>,
-    fee: number = 0.003,
+    fee: number = 30,
   ) {
     const tokenAmounts = currencyAmountA.currency.sortsBefore(
       tokenAmountB.currency
@@ -220,7 +220,7 @@ export class Pair {
       inputReserve.quotient,
       outputReserve.quotient
     );
-    const outputAmountBeforeFee = JSBI.subtract(
+    const outputAmountBeforeTax = JSBI.subtract(
       outputReserve.quotient,
       JSBI.divide(
         crossProduct,
@@ -228,12 +228,12 @@ export class Pair {
       )
     );
     const taxAmount = JSBI.divide(
-      JSBI.multiply(outputAmountBeforeFee, JSBI.BigInt(this.fee)),
+      JSBI.multiply(outputAmountBeforeTax, JSBI.BigInt(this.fee)),
       BASIS_POINTS
     );
     const outputAmount = CurrencyAmount.fromRawAmount(
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
-      JSBI.subtract(outputAmountBeforeFee, taxAmount)
+      JSBI.subtract(outputAmountBeforeTax, taxAmount)
     );
 
     // TODO: returnamount should be before tax
@@ -243,7 +243,7 @@ export class Pair {
         inputReserve.add(inputAmount),
         outputReserve.subtract(CurrencyAmount.fromRawAmount(
           outputAmount.currency,
-          outputAmountBeforeFee)
+          outputAmountBeforeTax)
         )
       )
     ]
@@ -275,13 +275,13 @@ export class Pair {
       inputReserve.quotient,
       inputAmount.quotient
     );
-    const outputAmountBeforeFee = JSBI.divide(numerator, denominator);
+    const outputAmountBeforeTax = JSBI.divide(numerator, denominator);
 
-    const feeToBeDeducted = JSBI.divide(JSBI.multiply(outputAmountBeforeFee, JSBI.BigInt(this.fee)), BASIS_POINTS);
+    const taxAmount = JSBI.divide(JSBI.multiply(outputAmountBeforeTax, JSBI.BigInt(this.fee)), BASIS_POINTS);
 
     const outputAmount = CurrencyAmount.fromRawAmount(
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
-      JSBI.subtract(outputAmountBeforeFee, feeToBeDeducted)
+      JSBI.subtract(outputAmountBeforeTax, taxAmount)
     );
 
     if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
@@ -299,7 +299,7 @@ export class Pair {
         inputReserve.add(inputAmount),
         outputReserve.subtract(CurrencyAmount.fromRawAmount(
           outputAmount.currency,
-          outputAmountBeforeFee)
+          outputAmountBeforeTax)
         )
       )
     ]
