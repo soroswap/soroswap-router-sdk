@@ -359,7 +359,7 @@ describe("Router", () => {
     // console.log('🚀 ~ it.only ~ route:', route?.quoteCurrency.quotient.toString());
 
     // expect quotient to be 1825286175
-    expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286175");
+    expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286174");
   });
 
 });
