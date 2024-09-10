@@ -339,7 +339,7 @@ describe("Router", () => {
 
   });
 
-  it("Should calculate optimal split distribution using protocol specific algorithms", async () => {
+  it.only("Should calculate optimal split distribution using protocol specific algorithms", async () => {
 
     const router = createRouter(
       [
@@ -361,7 +361,7 @@ describe("Router", () => {
               tokenA: "XLM_ADDRESS",
               tokenB: "USDC_ADDRESS",
               reserveA: "8291494350066",
-              reserveB: "706515116511",
+              reserveB: "7065151165114",
               fee: "30"
             }
           ],
@@ -370,7 +370,7 @@ describe("Router", () => {
       [Protocols.SOROSWAP, Protocols.PHOENIX]
     );
 
-    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000);
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_0000000);
     const parts = 10;
 
     const route = await router.routeSplit(

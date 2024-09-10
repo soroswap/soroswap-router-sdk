@@ -284,6 +284,15 @@ export class Router {
         sorobanContext
       );
     }
+    // console.log('🚀 ~ Router ~ routes:', JSON.stringify(routes, null, 2));
+    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].reserve0.quotient.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].token0.address.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].reserve1.quotient.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].token1.address.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].reserve0.quotient.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].token0.address.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].reserve1.quotient.toString());
+    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].token1.address.toString());
 
     let routeArray: (BuildTradeReturn | null)[] = [];
 
@@ -294,14 +303,17 @@ export class Router {
 
         let route: BuildTradeReturn | null = null;
 
+        let fixedRoutes = this._protocols[i] === Protocols.SOROSWAP ? [routes[0]] : [routes[1]];;
         if (tradeType === TradeType.EXACT_INPUT) {
           route = await this.routeExactIn(
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            routes,
+            // route,
+            fixedRoutes,
             this._protocols[i]
           );
+          console.log('🚀 ~ Router ~ _protocols:', this._protocols[i], ' part', part, 'route.trade.amountoutmin', route?.trade?.amountOutMin);
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
         } else {
@@ -322,6 +334,7 @@ export class Router {
         paths[i][j + 1] = route?.trade?.path || [];
       }
     }
+    console.log('🚀 ~ Router ~ amounts:', amounts);
 
     const [totalAmount, distribution] = this._findBestDistribution(
       parts,

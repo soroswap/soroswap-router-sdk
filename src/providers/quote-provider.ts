@@ -145,6 +145,7 @@ export class QuoteProvider {
 
       routesWithQuotes.push([route, amountQuotes]);
     }
+    // console.log('🚀 ~ QuoteProvider ~ routesWithQuotes:', JSON.stringify(routesWithQuotes, null, 2));
 
     return {
       routesWithQuotes,
