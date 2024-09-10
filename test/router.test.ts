@@ -355,10 +355,7 @@ describe("Router", () => {
       TradeType.EXACT_INPUT,
     );
 
-    // console.log('🚀 ~ it.only ~ route:', route);
-    // console.log('🚀 ~ it.only ~ route:', route?.quoteCurrency.quotient.toString());
-
-    // expect quotient to be 1825286175
+    // expect quotient to be 1825286174
     expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286174");
   });
 
