@@ -175,7 +175,6 @@ export class Pair {
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
       JSBI.divide(numerator, denominator) // JSBI.divide will round down by itself, which is desired
     );
-
     if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
       throw new InsufficientReservesError();
     }
@@ -196,7 +195,6 @@ export class Pair {
   public getOutputAmountSoroswap(
     inputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getOutputAmountSoroswap");
     invariant(this.involvesToken(inputAmount.currency), "TOKEN");
     return this.getOutputAmount(inputAmount);
   }

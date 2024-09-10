@@ -269,7 +269,7 @@ describe("Router", () => {
     expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
   });
 
-  it.only("Should calculate optimal split distribution using protocol specific algorithms", async () => {
+  it("Should calculate optimal split distribution using protocol specific algorithms", async () => {
 
     const router = createRouter(
       [
@@ -355,8 +355,8 @@ describe("Router", () => {
       TradeType.EXACT_INPUT,
     );
 
-    console.log('🚀 ~ it.only ~ route:', route);
-    console.log('🚀 ~ it.only ~ route:', route?.quoteCurrency.quotient.toString());
+    // console.log('🚀 ~ it.only ~ route:', route);
+    // console.log('🚀 ~ it.only ~ route:', route?.quoteCurrency.quotient.toString());
 
     // expect quotient to be 1825286175
     expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286175");

@@ -140,7 +140,6 @@ export class Router {
         factoryAddress,
         sorobanContext
       );
-      console.log('🚀 ~ Router ~ routes:', routes);
       return this.routeExactIn(
         amount.currency,
         quoteCurrency,
@@ -248,7 +247,6 @@ export class Router {
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
-    // console.log('🚀 « amount:', amount.toFixed());
     const interval = 100 / parts;
 
     const partsArray = Array.from(
@@ -539,7 +537,6 @@ export class Router {
       sorobanContext,
       protocols
     );
-    console.log('🚀 ~ Router ~ allPairs:', allPairs);
 
     if (!allPairs) return [];
 
@@ -590,7 +587,6 @@ export class Router {
       const outputToken = pair.token0.equals(tokenIn)
         ? pair.token1
         : pair.token0;
-      console.log('🚀 ~ Router ~ outputToken:', outputToken);
       if (outputToken.equals(tokenOut)) {
         allPaths.push(
           new V2Route([...currentPath, pair], startTokenIn, tokenOut)
