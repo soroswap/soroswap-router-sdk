@@ -269,6 +269,76 @@ describe("Router", () => {
     expect(route.trade.amountOutMin).toEqual(requiredFinalAmount);
   });
 
+  it("Should Calculate Optimal Route using Phoenix Specific Protocol", async () => {
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30"
+            }
+          ],
+        },
+      ],
+      [Protocols.PHOENIX],
+    );
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000);
+    const parts = 10;
+
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+      parts
+    );
+    expect(route).not.toBeNull();
+
+    expect(route?.trade.amountOutMin).toEqual("75810794757");
+    expect(route?.trade.distribution[0].protocol_id).toEqual("phoenix");
+    expect(route?.trade.distribution[0].parts).toEqual(parts);
+
+  });
+
+  it("Should Calculate Optimal Route using Aquarius Specific Protocol", async () => {
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.AQUARIUS,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "10995320835786",
+              reserveB: "1029760349373",
+              fee: "10"
+            }
+          ],
+        },
+      ],
+      [Protocols.AQUARIUS],
+    );
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_0000000);
+    const parts = 1;
+
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+      parts
+    );
+    expect(route).not.toBeNull();
+
+    expect(route?.trade.amountOutMin).toEqual("93552253");
+    expect(route?.trade.distribution[0].protocol_id).toEqual("aquarius");
+    expect(route?.trade.distribution[0].parts).toEqual(parts);
+
+  });
+
   it("Should calculate optimal split distribution using protocol specific algorithms", async () => {
 
     const router = createRouter(
@@ -300,7 +370,7 @@ describe("Router", () => {
       [Protocols.SOROSWAP, Protocols.PHOENIX]
     );
 
-    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000);
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000);
     const parts = 10;
 
     const route = await router.routeSplit(
@@ -311,13 +381,13 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    // console.log('🚀 ~ it.only ~ routeSplit:', route?.trade);
+    console.log('🚀 ~ it.only ~ routeSplit:', route?.trade);
     // expect(route.trade.distribution[0].parts).toEqual(7);
     // expect(route.trade.distribution[1].parts).toEqual(3);
 
   });
 
-  it.only("Should calculate optimal route without loosing precision", async () => {
+  it("Should calculate optimal route without loosing precision", async () => {
 
     const router = createRouter(
       [

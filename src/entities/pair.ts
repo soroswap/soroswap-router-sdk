@@ -202,7 +202,6 @@ export class Pair {
   public getOutputAmountPhoenix(
     inputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getOutputAmountPhoenix");
     invariant(this.involvesToken(inputAmount.currency), "TOKEN");
     if (
       JSBI.equal(this.reserve0.quotient, ZERO) ||
@@ -214,16 +213,27 @@ export class Pair {
     const outputReserve = this.reserveOf(
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0
     );
-    const crossProduct = JSBI.multiply(
-      inputReserve.quotient,
-      outputReserve.quotient
-    );
-    const outputAmountBeforeTax = JSBI.subtract(
-      outputReserve.quotient,
-      JSBI.divide(
-        crossProduct,
-        JSBI.add(inputReserve.quotient, inputAmount.quotient)
-      )
+
+    // This is how it is calculated inside the contract
+    // However we encounter a loss of precision when using JSBI
+    // So we choose to use the formula below
+    //
+    // const crossProduct = JSBI.multiply(
+    //   inputReserve.quotient,
+    //   outputReserve.quotient
+    // );
+    // 
+    // const outputAmountBeforeTax = JSBI.subtract(
+    //   outputReserve.quotient,
+    //   JSBI.divide(
+    //     crossProduct,
+    //     JSBI.add(inputReserve.quotient, inputAmount.quotient)
+    //   )
+    // );
+
+    const outputAmountBeforeTax = JSBI.divide(
+      JSBI.multiply(outputReserve.quotient, inputAmount.quotient),
+      JSBI.add(inputReserve.quotient, inputAmount.quotient)
     );
     const taxAmount = JSBI.divide(
       JSBI.multiply(outputAmountBeforeTax, JSBI.BigInt(this.fee)),
@@ -241,7 +251,7 @@ export class Pair {
         inputReserve.add(inputAmount),
         outputReserve.subtract(CurrencyAmount.fromRawAmount(
           outputAmount.currency,
-          outputAmountBeforeTax)
+          outputAmount.quotient)
         )
       )
     ]
@@ -250,7 +260,6 @@ export class Pair {
   public getOutputAmountAquarius(
     inputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getOutputAmountSoroswap");
     invariant(this.involvesToken(inputAmount.currency), "TOKEN");
     if (
       JSBI.equal(this.reserve0.quotient, ZERO) ||

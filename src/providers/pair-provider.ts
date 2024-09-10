@@ -15,6 +15,7 @@ export interface PairFromApi {
   reserveA: string;
   reserveB: string;
   protocol?: Protocols;
+  fee?: string;
 }
 
 /**
@@ -209,7 +210,8 @@ export class PairProvider {
 
           const pairInstance = new Pair(
             CurrencyAmount.fromRawAmount(token0, pair.reserveA),
-            CurrencyAmount.fromRawAmount(token1, pair.reserveB)
+            CurrencyAmount.fromRawAmount(token1, pair.reserveB),
+            pair.fee ? Number(pair.fee) : undefined
           );
 
           return pairInstance;
