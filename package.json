@@ -8,7 +8,7 @@
     "build": "tsdx build",
     "docs": "typedoc",
     "test": "jest",
-    "dev": "yarn jest --testPathPattern=router.test.ts"
+    "dev": "yarn jest --testPathPattern=pair.test.ts"
   },
   "private": false,
   "files": [

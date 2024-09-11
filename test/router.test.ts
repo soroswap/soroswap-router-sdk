@@ -22,7 +22,7 @@ const createRouter = (
   });
 };
 
-const createToken = (address: string) => {
+export const createToken = (address: string) => {
   return new Token(Networks.TESTNET, address, 7);
 };
 
@@ -288,7 +288,7 @@ describe("Router", () => {
       [Protocols.PHOENIX],
     );
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000);
-    const parts = 10;
+    const parts = 1;
 
     const route = await router.routeSplit(
       amountSplit,
@@ -339,7 +339,7 @@ describe("Router", () => {
 
   });
 
-  it.only("Should calculate optimal split distribution using protocol specific algorithms", async () => {
+  it("Should calculate optimal split distribution using protocol specific algorithms", async () => {
 
     const router = createRouter(
       [
@@ -361,7 +361,7 @@ describe("Router", () => {
               tokenA: "XLM_ADDRESS",
               tokenB: "USDC_ADDRESS",
               reserveA: "8291494350066",
-              reserveB: "7065151165114",
+              reserveB: "706515116511",
               fee: "30"
             }
           ],
@@ -370,7 +370,7 @@ describe("Router", () => {
       [Protocols.SOROSWAP, Protocols.PHOENIX]
     );
 
-    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_0000000);
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100000_0000000);
     const parts = 10;
 
     const route = await router.routeSplit(
@@ -381,9 +381,10 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    console.log('🚀 ~ it.only ~ routeSplit:', route?.trade);
-    // expect(route.trade.distribution[0].parts).toEqual(7);
-    // expect(route.trade.distribution[1].parts).toEqual(3);
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
+    expect(soroswapDistribution?.parts).toEqual(7);
+    expect(phoenixDistribution?.parts).toEqual(3);
 
   });
 

@@ -166,7 +166,7 @@ export class Router {
 
   /**
    * @private
-   * @param s - The total amount to be distributed among protocols.
+   * @param s - The total parts to be distributed among protocols.
    * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
    * @returns An array containing the total value of the distributed amounts and the distribution percentages.
    */
@@ -209,7 +209,6 @@ export class Router {
     }
 
     const distribution: number[] = new Array(this._protocols.length).fill(0);
-
     let partsLeft = s;
     for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
       distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
@@ -247,11 +246,11 @@ export class Router {
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
-    const interval = 100 / parts;
 
     const partsArray = Array.from(
       { length: parts },
-      (_, index) => interval * (index + 1)
+      // (_, index) => interval * (index + 1)
+      (_, index) => (index + 1)
     );
 
     let amounts: number[][] = new Array(this._protocols.length)
@@ -267,6 +266,7 @@ export class Router {
       .map(() => new Array(parts + 1).fill(0));
 
     let routes: V2Route[] = [];
+    let routesProtocol: V2Route[][] = [];
     if (tradeType === TradeType.EXACT_INPUT) {
       routes = await this._getAllRoutes(
         amount.currency.wrapped,
@@ -275,6 +275,15 @@ export class Router {
         factoryAddress,
         sorobanContext
       );
+      routesProtocol = await Promise.all(this._protocols.map(async (protocol) => {
+        return await this._getAllRoutesByProtocol(
+          amount.currency.wrapped,
+          quoteCurrency.wrapped,
+          protocol,
+          factoryAddress,
+          sorobanContext
+        );
+      }));
     } else {
       routes = await this._getAllRoutes(
         quoteCurrency.wrapped,
@@ -284,36 +293,25 @@ export class Router {
         sorobanContext
       );
     }
-    // console.log('🚀 ~ Router ~ routes:', JSON.stringify(routes, null, 2));
-    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].reserve0.quotient.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].token0.address.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].reserve1.quotient.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[0].pairs[0].token1.address.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].reserve0.quotient.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].token0.address.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].reserve1.quotient.toString());
-    console.log('🚀 ~ Router ~ routes:', routes[1].pairs[0].token1.address.toString());
 
     let routeArray: (BuildTradeReturn | null)[] = [];
 
     for (let i = 0; i < this._protocols.length; i++) {
       for (let j = 0; j < partsArray.length; j++) {
         const part = partsArray[j];
-        const amountPerProtocol = amount.multiply(part).divide(100);
+        const amountPerProtocol = amount.multiply(part).divide(parts);
 
         let route: BuildTradeReturn | null = null;
 
-        let fixedRoutes = this._protocols[i] === Protocols.SOROSWAP ? [routes[0]] : [routes[1]];;
+        let routeProtocol = routesProtocol[i];
         if (tradeType === TradeType.EXACT_INPUT) {
           route = await this.routeExactIn(
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            // route,
-            fixedRoutes,
+            routeProtocol,
             this._protocols[i]
           );
-          console.log('🚀 ~ Router ~ _protocols:', this._protocols[i], ' part', part, 'route.trade.amountoutmin', route?.trade?.amountOutMin);
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
         } else {
@@ -334,7 +332,6 @@ export class Router {
         paths[i][j + 1] = route?.trade?.path || [];
       }
     }
-    console.log('🚀 ~ Router ~ amounts:', amounts);
 
     const [totalAmount, distribution] = this._findBestDistribution(
       parts,
@@ -569,6 +566,26 @@ export class Router {
 
   public resetCache() {
     this._pairProvider.resetCache();
+  }
+
+  /**
+   * Retrieves all routes for swapping tokens based on the specified protocol.
+   * 
+   * @param tokenIn - The input token for the swap.
+   * @param tokenOut - The output token for the swap.
+   * @param protocol - The protocol to use for the swap.
+   * @param factoryAddress - The address of the factory contract.
+   * @param sorobanContext - The Soroban context type.
+   * @returns A promise that resolves to the array of routes for swapping tokens.
+   */
+  private async _getAllRoutesByProtocol(
+    tokenIn: Token,
+    tokenOut: Token,
+    protocol: Protocols,
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
+  ) {
+    return this._getAllRoutes(tokenIn, tokenOut, [protocol], factoryAddress, sorobanContext);
   }
 
   /**
