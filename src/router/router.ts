@@ -266,7 +266,8 @@ export class Router {
       .map(() => new Array(parts + 1).fill(0));
 
     let routes: V2Route[] = [];
-    let routesProtocol: V2Route[][] = [];
+    let routesProtocol: { [protocol: string]: V2Route[] } = {};
+
     if (tradeType === TradeType.EXACT_INPUT) {
       routes = await this._getAllRoutes(
         amount.currency.wrapped,
@@ -275,15 +276,21 @@ export class Router {
         factoryAddress,
         sorobanContext
       );
-      routesProtocol = await Promise.all(this._protocols.map(async (protocol) => {
-        return await this._getAllRoutesByProtocol(
+
+      const protocolRoutes = await Promise.all(this._protocols.map(async (protocol) => {
+        const routes = await this._getAllRoutesByProtocol(
           amount.currency.wrapped,
           quoteCurrency.wrapped,
           protocol,
           factoryAddress,
           sorobanContext
         );
+        return { protocol, routes };
       }));
+      protocolRoutes.forEach(({ protocol, routes }) => {
+        routesProtocol[protocol] = routes;
+      });
+
     } else {
       routes = await this._getAllRoutes(
         quoteCurrency.wrapped,
@@ -303,7 +310,8 @@ export class Router {
 
         let route: BuildTradeReturn | null = null;
 
-        let routeProtocol = routesProtocol[i];
+        let routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
+
         if (tradeType === TradeType.EXACT_INPUT) {
           route = await this.routeExactIn(
             amount.currency,
@@ -374,7 +382,7 @@ export class Router {
         amountInMax: String(totalAmount),
         amountOut: amount.quotient.toString(),
         path: [],
-        distribution: filteredDistribution.map((amount, index) => {
+        distribution: distribution.map((amount, index) => {
           return {
             protocol_id: this._protocols[index],
             path: paths[index][amount],

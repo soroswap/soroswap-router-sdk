@@ -381,7 +381,7 @@ describe("Router", () => {
 
   });
 
-  it("Should calculate optimal split distribution using protocol specific algorithms", async () => {
+  it("Should calculate optimal split distribution using protocol specific algorithms for phoenix and soroswap", async () => {
 
     const router = createRouter(
       [
@@ -429,6 +429,69 @@ describe("Router", () => {
     expect(phoenixDistribution?.parts).toEqual(3);
 
   });
+  it("Should calculate optimal split distribution using protocol specific algorithms for phoenix and soroswap", async () => {
 
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            }
+          ],
+        },
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30"
+            }
+          ],
+        },
+        {
+          protocol: Protocols.AQUARIUS,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "10995320835786",
+              reserveB: "1029760349373",
+              fee: "10"
+            }
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+    );
 
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 500000_0000000);
+    const parts = 10;
+
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+      parts
+    );
+    expect(route).not.toBeNull();
+
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+
+    expect(aquariusDistribution?.parts).toEqual(4);
+    expect(soroswapDistribution?.parts).toEqual(4);
+    expect(phoenixDistribution?.parts).toEqual(2);
+
+    expect(route.trade.amountOutMin).toEqual("386644391386");
+  });
 });
+
