@@ -124,6 +124,48 @@ describe("Router", () => {
     ]);
   });
 
+  it("Should calculate optimal route without loosing precision", async () => {
+
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            }, {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "EURC_ADDRESS",
+              reserveA: "181515657088",
+              reserveB: "163462214604",
+            }, {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "34072360177",
+              reserveB: "5167239439236"
+            }
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP],
+      3
+    );
+
+    const routeAmount = CurrencyAmount.fromRawAmount(AQUA_TOKEN, 1000000_0000000);
+    const quoteCurrency = EURC_TOKEN;
+    const route = await router.route(
+      routeAmount,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+    );
+
+    // expect quotient to be 1825286174
+    expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286174");
+  });
+
   it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
     const router = createRouter([
       {
@@ -388,46 +430,5 @@ describe("Router", () => {
 
   });
 
-  it("Should calculate optimal route without loosing precision", async () => {
-
-    const router = createRouter(
-      [
-        {
-          protocol: Protocols.SOROSWAP,
-          fn: async () => [
-            {
-              tokenA: "XLM_ADDRESS",
-              tokenB: "USDC_ADDRESS",
-              reserveA: "9767010468590",
-              reserveB: "899536615278",
-            }, {
-              tokenA: "USDC_ADDRESS",
-              tokenB: "EURC_ADDRESS",
-              reserveA: "181515657088",
-              reserveB: "163462214604",
-            }, {
-              tokenA: "XLM_ADDRESS",
-              tokenB: "AQUA_ADDRESS",
-              reserveA: "34072360177",
-              reserveB: "5167239439236"
-            }
-          ],
-        },
-      ],
-      [Protocols.SOROSWAP],
-      3
-    );
-
-    const routeAmount = CurrencyAmount.fromRawAmount(AQUA_TOKEN, 1000000_0000000);
-    const quoteCurrency = EURC_TOKEN;
-    const route = await router.route(
-      routeAmount,
-      quoteCurrency,
-      TradeType.EXACT_INPUT,
-    );
-
-    // expect quotient to be 1825286174
-    expect(route?.quoteCurrency.quotient.toString()).toEqual("1825286174");
-  });
 
 });
