@@ -6,7 +6,7 @@ const XLM_TOKEN = createToken("XLM_ADDRESS")
 const USDC_TOKEN = createToken("USDC_ADDRESS")
 
 describe('Pair', () => {
-    describe.only('Phoenix', () => {
+    describe('Phoenix', () => {
         let pair: Pair;
 
         beforeEach(() => {
@@ -44,6 +44,35 @@ describe('Pair', () => {
 
             const expectedInputAmount = CurrencyAmount.fromRawAmount(XLM_TOKEN, "117712438");
             expect(inputAmount.quotient).toEqual(expectedInputAmount.quotient);
+            expect(inputAmount.equalTo(expectedInputAmount)).toBe(true);
+        });
+    });
+    describe.only('Aquarius', () => {
+        let pair: Pair;
+        beforeEach(() => {
+            pair = new Pair(
+                CurrencyAmount.fromRawAmount(XLM_TOKEN, "10995320835786"), // Mocked reserve0
+                CurrencyAmount.fromRawAmount(USDC_TOKEN, "1029760349373") // Mocked reserve1
+            );
+        });
+        it('should correctly calculate the output amount for Aquarius protocol', () => {
+
+            const inputAmount = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000); // Mocked input amount
+
+            const [outputAmount, _] = pair.getOutputAmountAquarius(inputAmount);
+
+            const expectedOutputAmount = CurrencyAmount.fromRawAmount(USDC_TOKEN, "85589296224");
+            expect(outputAmount.quotient.toString()).toEqual(expectedOutputAmount.quotient.toString());
+            expect(outputAmount.equalTo(expectedOutputAmount)).toBe(true);
+        });
+
+        it('should correctly calculate the input amount for Aquarius protocol', () => {
+
+            const outputAmount = CurrencyAmount.fromRawAmount(USDC_TOKEN, 1_0000000); // Mocked output amount
+            const [inputAmount, _] = pair.getInputAmountAquarius(outputAmount);
+
+            const expectedInputAmount = CurrencyAmount.fromRawAmount(XLM_TOKEN, "107097864");
+            expect(inputAmount.quotient.toString()).toEqual(expectedInputAmount.quotient.toString());
             expect(inputAmount.equalTo(expectedInputAmount)).toBe(true);
         });
     });
