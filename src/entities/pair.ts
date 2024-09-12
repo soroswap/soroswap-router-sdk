@@ -374,7 +374,37 @@ export class Pair {
   ): [CurrencyAmount<Token>, Pair] {
     console.log("getInputAmountPhoenix");
     invariant(this.involvesToken(outputAmount.currency), "TOKEN");
-    return this.getInputAmount(outputAmount);
+    const outputReserve = this.reserveOf(outputAmount.currency);
+    const inputReserve = this.reserveOf(
+      outputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+
+    const numerator = JSBI.multiply(
+      JSBI.multiply(inputReserve.quotient, outputAmount.quotient),
+      BASIS_POINTS
+    );
+    const denominator =
+      JSBI.subtract(
+        JSBI.multiply(
+          outputReserve.quotient,
+          JSBI.subtract(BASIS_POINTS, JSBI.BigInt(this.fee))
+        ),
+        JSBI.multiply(
+          outputAmount.quotient,
+          BASIS_POINTS
+        )
+      );
+    const inputAmount = CurrencyAmount.fromRawAmount(
+      inputReserve.currency,
+      JSBI.divide(numerator, denominator)
+    );
+
+    return [inputAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(outputAmount)
+      )
+    ]
   }
 
   public getInputAmountAquarius(
