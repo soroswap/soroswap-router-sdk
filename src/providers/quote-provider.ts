@@ -120,7 +120,19 @@ export class QuoteProvider {
 
             for (let i = route.pairs.length - 1; i >= 0; i--) {
               const pair = route.pairs[i]!;
-              [inputAmount] = pair.getInputAmount(inputAmount);
+              switch (protocol) {
+                case Protocols.SOROSWAP:
+                  [inputAmount] = pair.getInputAmountSoroswap(inputAmount);
+                  break;
+                case Protocols.PHOENIX:
+                  [inputAmount] = pair.getInputAmountPhoenix(inputAmount);
+                  break;
+                case Protocols.AQUARIUS:
+                  [inputAmount] = pair.getInputAmountAquarius(inputAmount);
+                  break;
+                default:
+                  throw new Error(`Protocol ${protocol} not supported`);
+              }
             }
 
             amountQuotes.push({

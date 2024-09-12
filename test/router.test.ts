@@ -429,7 +429,7 @@ describe("Router", () => {
     expect(phoenixDistribution?.parts).toEqual(3);
 
   });
-  it("Should calculate optimal split distribution using protocol specific algorithms for Soroswap, Phoenix and Aquarius", async () => {
+  it("Should calculate optimal split distribution for exact in using protocol specific algorithms for Soroswap, Phoenix and Aquarius", async () => {
 
     const router = createRouter(
       [
@@ -493,5 +493,71 @@ describe("Router", () => {
 
     expect(route.trade.amountOutMin).toEqual("386644391386");
   });
+
+  it("Should calculate optimal split distribution for exact outusing protocol specific algorithms for Soroswap, Phoenix and Aquarius", async () => {
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            }
+          ],
+        },
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30"
+            }
+          ],
+        },
+        {
+          protocol: Protocols.AQUARIUS,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "10995320835786",
+              reserveB: "1029760349373",
+              fee: "10"
+            }
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+    );
+
+    const amountSplit = CurrencyAmount.fromRawAmount(USDC_TOKEN, 10000_0000000);
+    const parts = 20;
+    quoteCurrency = XLM_TOKEN;
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_OUTPUT,
+      parts
+    );
+    expect(route).not.toBeNull();
+
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+
+    expect(aquariusDistribution?.parts).toEqual(11);
+    expect(soroswapDistribution?.parts).toEqual(8);
+    expect(phoenixDistribution?.parts).toEqual(1);
+
+    expect(route.trade.amountInMax).toEqual("1136225742131");
+
+  });
+
 });
 

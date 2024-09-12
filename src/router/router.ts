@@ -164,61 +164,124 @@ export class Router {
     }
   }
 
+  // /**
+  //  * @private
+  //  * @param s - The total parts to be distributed among protocols.
+  //  * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
+  //  * @returns An array containing the total value of the distributed amounts and the distribution percentages.
+  //  */
+  // private _findBestDistribution(
+  //   s: number,
+  //   amounts: number[][]
+  // ): [number, number[]] {
+  //   const n = amounts.length;
+
+  //   const VERY_NEGATIVE_VALUE = -1e72;
+
+  //   const answer: number[][] = new Array(n);
+  //   const parent: number[][] = new Array(n);
+
+  //   for (let i = 0; i < n; i++) {
+  //     answer[i] = new Array(s + 1).fill(0);
+  //     parent[i] = new Array(s + 1).fill(0);
+  //   }
+
+  //   for (let j = 0; j <= s; j++) {
+  //     answer[0][j] = amounts[0][j];
+  //     for (let i = 1; i < n; i++) {
+  //       answer[i][j] = VERY_NEGATIVE_VALUE;
+  //     }
+  //     parent[0][j] = 0;
+  //   }
+
+  //   for (let i = 1; i < n; i++) {
+  //     for (let j = 0; j <= s; j++) {
+  //       answer[i][j] = answer[i - 1][j];
+  //       parent[i][j] = j;
+
+  //       for (let k = 1; k <= j; k++) {
+  //         if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
+  //           answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+  //           parent[i][j] = j - k;
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   const distribution: number[] = new Array(this._protocols.length).fill(0);
+  //   let partsLeft = s;
+  //   for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
+  //     distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
+  //     partsLeft = parent[curExchange][partsLeft];
+  //   }
+
+  //   const returnAmount =
+  //     answer[n - 1][s] === VERY_NEGATIVE_VALUE ? 0 : answer[n - 1][s];
+
+  //   return [returnAmount, distribution];
+  // }
+
   /**
-   * @private
-   * @param s - The total parts to be distributed among protocols.
-   * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
-   * @returns An array containing the total value of the distributed amounts and the distribution percentages.
+   * Generic function to find the best distribution based on a strategy (minimization or maximization).
+   * @param {number} s - The total amount to distribute.
+   * @param {number[][]} data - The values or costs associated with each allocation.
+   * @param {Function} comparator - A function to compare values (e.g., Math.max or Math.min).
+   * @param {number} initialValue - The initial value (positive or negative infinity).
+   * @returns {[number, number[]]} - A tuple with the result (minimized or maximized) and the distribution array.
    */
-  private _findBestDistribution(
+  _findBestDistribution(
     s: number,
-    amounts: number[][]
-  ): [number, number[]] {
+    amounts: number[][],
+    comparator: Function,
+    initialValue: number): [number, number[]] {
     const n = amounts.length;
+    const result = Array.from({ length: n }, () => Array(s + 1).fill(initialValue));
+    const parent = Array.from({ length: n }, () => Array(s + 1).fill(0));
 
-    const VERY_NEGATIVE_VALUE = -1e72;
-
-    const answer: number[][] = new Array(n);
-    const parent: number[][] = new Array(n);
-
-    for (let i = 0; i < n; i++) {
-      answer[i] = new Array(s + 1).fill(0);
-      parent[i] = new Array(s + 1).fill(0);
-    }
-
+    // Initialize the first row
     for (let j = 0; j <= s; j++) {
-      answer[0][j] = amounts[0][j];
-      for (let i = 1; i < n; i++) {
-        answer[i][j] = VERY_NEGATIVE_VALUE;
-      }
+      result[0][j] = amounts[0][j];
       parent[0][j] = 0;
     }
 
+    // Build the DP table
     for (let i = 1; i < n; i++) {
       for (let j = 0; j <= s; j++) {
-        answer[i][j] = answer[i - 1][j];
+        result[i][j] = result[i - 1][j];
         parent[i][j] = j;
 
         for (let k = 1; k <= j; k++) {
-          if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
-            answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+          const newValue = result[i - 1][j - k] + amounts[i][k];
+          if (comparator(newValue, result[i][j]) === newValue) {
+            result[i][j] = newValue;
             parent[i][j] = j - k;
           }
         }
       }
     }
 
-    const distribution: number[] = new Array(this._protocols.length).fill(0);
+    // Reconstruct the best distribution
+    const distribution = Array(n).fill(0);
     let partsLeft = s;
-    for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
-      distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
-      partsLeft = parent[curExchange][partsLeft];
+    for (let i = n - 1; i >= 0 && partsLeft > 0; i--) {
+      distribution[i] = partsLeft - parent[i][partsLeft];
+      partsLeft = parent[i][partsLeft];
     }
 
-    const returnAmount =
-      answer[n - 1][s] === VERY_NEGATIVE_VALUE ? 0 : answer[n - 1][s];
+    // Final result (minimized or maximized)
+    const finalResult = result[n - 1][s] === initialValue ? 0 : result[n - 1][s];
 
-    return [returnAmount, distribution];
+    return [finalResult, distribution];
+  }
+
+  // Maximize value version
+  _findMaxValueDistribution(s: number, values: number[][]) {
+    return this._findBestDistribution(s, values, Math.max, Number.NEGATIVE_INFINITY);
+  }
+
+  // Minimize cost version
+  _findMinCostDistribution(s: number, costs: number[][]) {
+    return this._findBestDistribution(s, costs, Math.min, Number.POSITIVE_INFINITY);
   }
 
   /**
@@ -265,17 +328,9 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
-    let routes: V2Route[] = [];
     let routesProtocol: { [protocol: string]: V2Route[] } = {};
 
     if (tradeType === TradeType.EXACT_INPUT) {
-      routes = await this._getAllRoutes(
-        amount.currency.wrapped,
-        quoteCurrency.wrapped,
-        this._protocols,
-        factoryAddress,
-        sorobanContext
-      );
 
       const protocolRoutes = await Promise.all(this._protocols.map(async (protocol) => {
         const routes = await this._getAllRoutesByProtocol(
@@ -292,13 +347,19 @@ export class Router {
       });
 
     } else {
-      routes = await this._getAllRoutes(
-        quoteCurrency.wrapped,
-        amount.currency.wrapped,
-        this._protocols,
-        factoryAddress,
-        sorobanContext
-      );
+      const protocolRoutes = await Promise.all(this._protocols.map(async (protocol) => {
+        const routes = await this._getAllRoutesByProtocol(
+          quoteCurrency.wrapped,
+          amount.currency.wrapped,
+          protocol,
+          factoryAddress,
+          sorobanContext
+        );
+        return { protocol, routes };
+      }));
+      protocolRoutes.forEach(({ protocol, routes }) => {
+        routesProtocol[protocol] = routes;
+      });
     }
 
     let routeArray: (BuildTradeReturn | null)[] = [];
@@ -310,7 +371,7 @@ export class Router {
 
         let route: BuildTradeReturn | null = null;
 
-        let routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
+        const routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
 
         if (tradeType === TradeType.EXACT_INPUT) {
           route = await this.routeExactIn(
@@ -323,11 +384,13 @@ export class Router {
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
         } else {
+          const routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
+
           route = await this.routeExactOut(
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            routes,
+            routeProtocol,
             this._protocols[i]
           );
 
@@ -341,10 +404,24 @@ export class Router {
       }
     }
 
-    const [totalAmount, distribution] = this._findBestDistribution(
-      parts,
-      amounts
-    );
+    let totalAmount, distribution
+    if (tradeType === TradeType.EXACT_INPUT) {
+      [totalAmount, distribution] = this._findMaxValueDistribution(
+        parts,
+        amounts
+      );
+    } else {
+      [totalAmount, distribution] = this._findMinCostDistribution(
+        parts,
+        amounts
+      );
+    }
+    // const [totalAmount, distribution] = this._findBestDistribution(
+    //   parts,
+    //   amounts
+    // );
+
+    console.log('🚀 ~ Router ~ distribution:', distribution);
 
     const filteredDistribution = distribution.filter((value) => value !== 0);
 
@@ -495,6 +572,7 @@ export class Router {
     const {
       routesWithQuotes: quotesRaw,
     } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes, protocol);
+
 
     const bestQuote = await this._getBestQuote(
       routes,

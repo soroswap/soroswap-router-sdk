@@ -363,14 +363,12 @@ export class Pair {
   public getInputAmountSoroswap(
     outputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getInputAmountSoroswap");
     return this.getInputAmount(outputAmount);
   }
 
   public getInputAmountPhoenix(
     outputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getInputAmountPhoenix");
     invariant(this.involvesToken(outputAmount.currency), "TOKEN");
     const outputReserve = this.reserveOf(outputAmount.currency);
     const inputReserve = this.reserveOf(
@@ -408,7 +406,6 @@ export class Pair {
   public getInputAmountAquarius(
     outputAmount: CurrencyAmount<Token>
   ): [CurrencyAmount<Token>, Pair] {
-    console.log("getInputAmountAquarius");
 
     return this.getInputAmountPhoenix(outputAmount);
   }
