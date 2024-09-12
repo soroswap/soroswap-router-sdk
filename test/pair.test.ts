@@ -47,7 +47,7 @@ describe('Pair', () => {
             expect(inputAmount.equalTo(expectedInputAmount)).toBe(true);
         });
     });
-    describe.only('Aquarius', () => {
+    describe('Aquarius', () => {
         let pair: Pair;
         beforeEach(() => {
             pair = new Pair(
