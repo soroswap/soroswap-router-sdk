@@ -429,7 +429,7 @@ describe("Router", () => {
     expect(phoenixDistribution?.parts).toEqual(3);
 
   });
-  it("Should calculate optimal split distribution using protocol specific algorithms for phoenix and soroswap", async () => {
+  it("Should calculate optimal split distribution using protocol specific algorithms for Soroswap, Phoenix and Aquarius", async () => {
 
     const router = createRouter(
       [
