@@ -416,12 +416,6 @@ export class Router {
         amounts
       );
     }
-    // const [totalAmount, distribution] = this._findBestDistribution(
-    //   parts,
-    //   amounts
-    // );
-
-    console.log('🚀 ~ Router ~ distribution:', distribution);
 
     const filteredDistribution = distribution.filter((value) => value !== 0);
 
