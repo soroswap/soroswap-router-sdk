@@ -31,14 +31,6 @@ jobs:
       - name: Run Jest tests
         run: yarn test --ci --coverage
 
-      # Upload Jest test results
-      - name: Upload Jest test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: jest-results
-          path: coverage  # Adjust based on where your test results are stored
-
       # Report the status of the test results
       - name: Display Test Results in PR
         if: failure()  # This step runs if the tests fail
