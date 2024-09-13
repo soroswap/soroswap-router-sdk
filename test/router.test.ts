@@ -560,7 +560,7 @@ describe("Router", () => {
 
   });
 
-  it.only("Should calculate optimal split distribution for exact out using 2 hops and 3 protocols", async () => {
+  it("Should calculate optimal split distribution for exact out using 2 hops and 3 protocols", async () => {
     const router = createRouter(
       [
         {
