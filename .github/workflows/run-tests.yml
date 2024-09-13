@@ -30,8 +30,3 @@ jobs:
       # Run Jest tests
       - name: Run Jest tests
         run: yarn test --ci --coverage
-
-      # Report the status of the test results
-      - name: Display Test Results in PR
-        if: failure()  # This step runs if the tests fail
-        run: echo "Jest tests failed! Check the details in the Actions tab."

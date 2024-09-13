@@ -641,7 +641,7 @@ describe("Router", () => {
     expect(soroswapDistribution?.parts).toEqual(10);
     expect(phoenixDistribution?.parts).toEqual(6);
 
-    expect(route.trade.amountInMax).toEqual("16117150066488c");
+    expect(route.trade.amountInMax).toEqual("16117150066488");
 
   });
 
