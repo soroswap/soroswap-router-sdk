@@ -30,6 +30,7 @@ const XLM_TOKEN = createToken("XLM_ADDRESS");
 const USDC_TOKEN = createToken("USDC_ADDRESS");
 const EURC_TOKEN = createToken("EURC_ADDRESS");
 const AQUA_TOKEN = createToken("AQUA_ADDRESS");
+
 describe("Router", () => {
   let amountCurrency: CurrencyAmount<Token>;
   let quoteCurrency: Token;
@@ -556,6 +557,91 @@ describe("Router", () => {
     expect(phoenixDistribution?.parts).toEqual(1);
 
     expect(route.trade.amountInMax).toEqual("1136225742131");
+
+  });
+
+  it.only("Should calculate optimal split distribution for exact out using 2 hops and 3 protocols", async () => {
+    const router = createRouter(
+      [
+        {
+          protocol: Protocols.SOROSWAP,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "9767010468590",
+              reserveB: "899536615278",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "643079281766",
+              reserveB: "1116567371410720",
+            }
+          ],
+        },
+        {
+          protocol: Protocols.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30"
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "57162602823",
+              reserveB: "99250433014286",
+              fee: "30"
+            }
+          ],
+        },
+        {
+          protocol: Protocols.AQUARIUS,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "10995320835786",
+              reserveB: "1029760349373",
+              fee: "10"
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "714532535295",
+              reserveB: "1240630412678580",
+              fee: "30"
+            }
+          ],
+        },
+      ],
+      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+    );
+
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 10000_0000000);
+    const parts = 20;
+    quoteCurrency = AQUA_TOKEN;
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_OUTPUT,
+      parts
+    );
+    expect(route).not.toBeNull();
+
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+
+    expect(aquariusDistribution?.parts).toEqual(4);
+    expect(soroswapDistribution?.parts).toEqual(10);
+    expect(phoenixDistribution?.parts).toEqual(6);
+
+    expect(route.trade.amountInMax).toEqual("16117150066488");
 
   });
 
