@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Protocols, TradeType } from "../constants";
+import { Protocol, TradeType } from "../constants";
 import { Token, Route } from "../entities";
 import {
   InsufficientInputAmountError,
@@ -49,7 +49,7 @@ export class QuoteProvider {
   public async getQuotesManyExactIn(
     amountIns: CurrencyAmount[],
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     return this.getQuotes(amountIns, routes, TradeType.EXACT_INPUT, protocol);
   }
@@ -64,7 +64,7 @@ export class QuoteProvider {
   public async getQuotesManyExactOut(
     amountOuts: CurrencyAmount[],
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     return this.getQuotes(amountOuts, routes, TradeType.EXACT_OUTPUT, protocol);
   }
@@ -81,7 +81,7 @@ export class QuoteProvider {
     amounts: CurrencyAmount[],
     routes: V2Route[],
     tradeType: TradeType,
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const routesWithQuotes: V2RouteWithQuotes[] = [];
 
@@ -97,13 +97,13 @@ export class QuoteProvider {
 
             for (const pair of route.pairs) {
               switch (protocol) {
-                case Protocols.SOROSWAP:
+                case Protocol.SOROSWAP:
                   [outputAmount] = pair.getOutputAmountSoroswap(outputAmount);
                   break;
-                case Protocols.PHOENIX:
+                case Protocol.PHOENIX:
                   [outputAmount] = pair.getOutputAmountPhoenix(outputAmount);
                   break;
-                case Protocols.AQUARIUS:
+                case Protocol.AQUARIUS:
                   [outputAmount] = pair.getOutputAmountAquarius(outputAmount);
                   break;
                 default:
@@ -121,13 +121,13 @@ export class QuoteProvider {
             for (let i = route.pairs.length - 1; i >= 0; i--) {
               const pair = route.pairs[i]!;
               switch (protocol) {
-                case Protocols.SOROSWAP:
+                case Protocol.SOROSWAP:
                   [inputAmount] = pair.getInputAmountSoroswap(inputAmount);
                   break;
-                case Protocols.PHOENIX:
+                case Protocol.PHOENIX:
                   [inputAmount] = pair.getInputAmountPhoenix(inputAmount);
                   break;
-                case Protocols.AQUARIUS:
+                case Protocol.AQUARIUS:
                   [inputAmount] = pair.getInputAmountAquarius(inputAmount);
                   break;
                 default:

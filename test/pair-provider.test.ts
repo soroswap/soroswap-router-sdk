@@ -1,4 +1,4 @@
-import { Networks, Protocols } from "../src";
+import { Networks, Protocol } from "../src";
 import { PairProvider } from "../src/providers/pair-provider";
 import { SorobanContextType } from "../src/utils/contractInvoke/types";
 
@@ -13,7 +13,7 @@ describe("PairProvider", () => {
       cacheInSeconds: 20,
       getPairsFns: [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [],
         },
       ],
@@ -35,7 +35,7 @@ describe("PairProvider", () => {
       address1,
       factoryAddress,
       {} as SorobanContextType,
-      [Protocols.SOROSWAP]
+      [Protocol.SOROSWAP]
     );
 
     // Verify that getPairsFromBackend and getPairFromBlockchain have been called as expected
@@ -50,7 +50,7 @@ describe("PairProvider", () => {
       network: Networks.TESTNET,
       getPairsFns: [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [],
         },
       ],
@@ -73,7 +73,7 @@ describe("PairProvider", () => {
       address1,
       factoryAddress,
       {} as SorobanContextType,
-      [Protocols.SOROSWAP]
+      [Protocol.SOROSWAP]
     );
 
     // Verify that getPairsFromBackend and getPairFromBlockchain have been called as expected
@@ -95,7 +95,7 @@ describe("PairProvider", () => {
       network: Networks.STANDALONE,
       getPairsFns: [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [],
         },
       ],
@@ -115,7 +115,7 @@ describe("PairProvider", () => {
       address1,
       factoryAddress,
       {} as SorobanContextType,
-      [Protocols.SOROSWAP]
+      [Protocol.SOROSWAP]
     );
 
     // Verify that getPairsFromBackend and getPairFromBlockchain have been called as expected

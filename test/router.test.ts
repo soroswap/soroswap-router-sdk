@@ -1,7 +1,7 @@
 import {
   CurrencyAmount,
   Networks,
-  Protocols,
+  Protocol,
   Router,
   Token,
   TradeType,
@@ -10,7 +10,7 @@ import { GetPairsFns } from "../src/router/router";
 
 const createRouter = (
   getPairsFns: GetPairsFns,
-  protocols: Protocols[] = [Protocols.SOROSWAP],
+  protocols: Protocol[] = [Protocol.SOROSWAP],
   maxHops?: number,
 ) => {
   return new Router({
@@ -43,7 +43,7 @@ describe("Router", () => {
   it("Ensure Direct Routing Between Tokens With Equal Reserves", async () => {
     const router = createRouter([
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => [
           {
             tokenA: "XLM_ADDRESS",
@@ -87,7 +87,7 @@ describe("Router", () => {
   it("Select Optimal Route for Exact Input Based on Reserve Ratios", async () => {
     const router = createRouter([
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => [
           {
             tokenA: "XLM_ADDRESS",
@@ -130,7 +130,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -151,7 +151,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP],
+      [Protocol.SOROSWAP],
       3
     );
 
@@ -170,7 +170,7 @@ describe("Router", () => {
   it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
     const router = createRouter([
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => [
           {
             tokenA: "XLM_ADDRESS",
@@ -210,7 +210,7 @@ describe("Router", () => {
   it("Handle Scenario With No Available Trading Pairs", async () => {
     const router = createRouter([
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => [],
       },
     ]);
@@ -224,11 +224,11 @@ describe("Router", () => {
     expect(route).toBeNull();
   });
 
-  it("Should Split Distribution And Select Optimal Route When Using Split Protocols", async () => {
+  it("Should Split Distribution And Select Optimal Route When Using Split Protocol", async () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -251,7 +251,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -274,7 +274,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP, Protocols.PHOENIX]
+      [Protocol.SOROSWAP, Protocol.PHOENIX]
     );
 
     const route = await router.routeSplit(
@@ -316,7 +316,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -328,7 +328,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.PHOENIX],
+      [Protocol.PHOENIX],
     );
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_000_0000000);
     const parts = 1;
@@ -351,7 +351,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.AQUARIUS,
+          protocol: Protocol.AQUARIUS,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -363,7 +363,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.AQUARIUS],
+      [Protocol.AQUARIUS],
     );
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100_0000000);
     const parts = 1;
@@ -387,7 +387,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -398,7 +398,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -410,7 +410,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP, Protocols.PHOENIX]
+      [Protocol.SOROSWAP, Protocol.PHOENIX]
     );
 
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 100000_0000000);
@@ -424,8 +424,8 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
-    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
     expect(soroswapDistribution?.parts).toEqual(7);
     expect(phoenixDistribution?.parts).toEqual(3);
 
@@ -435,7 +435,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -446,7 +446,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -458,7 +458,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.AQUARIUS,
+          protocol: Protocol.AQUARIUS,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -470,7 +470,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+      [Protocol.SOROSWAP, Protocol.PHOENIX, Protocol.AQUARIUS]
     );
 
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 500000_0000000);
@@ -484,9 +484,9 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
-    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
-    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.AQUARIUS);
 
     expect(aquariusDistribution?.parts).toEqual(4);
     expect(soroswapDistribution?.parts).toEqual(4);
@@ -499,7 +499,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -510,7 +510,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -522,7 +522,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.AQUARIUS,
+          protocol: Protocol.AQUARIUS,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -534,7 +534,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+      [Protocol.SOROSWAP, Protocol.PHOENIX, Protocol.AQUARIUS]
     );
 
     const amountSplit = CurrencyAmount.fromRawAmount(USDC_TOKEN, 10000_0000000);
@@ -548,9 +548,9 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
-    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
-    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.AQUARIUS);
 
     expect(aquariusDistribution?.parts).toEqual(11);
     expect(soroswapDistribution?.parts).toEqual(8);
@@ -564,7 +564,7 @@ describe("Router", () => {
     const router = createRouter(
       [
         {
-          protocol: Protocols.SOROSWAP,
+          protocol: Protocol.SOROSWAP,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -581,7 +581,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.PHOENIX,
+          protocol: Protocol.PHOENIX,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -600,7 +600,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocols.AQUARIUS,
+          protocol: Protocol.AQUARIUS,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -619,7 +619,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocols.SOROSWAP, Protocols.PHOENIX, Protocols.AQUARIUS]
+      [Protocol.SOROSWAP, Protocol.PHOENIX, Protocol.AQUARIUS]
     );
 
     const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 10000_0000000);
@@ -633,9 +633,9 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
-    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.SOROSWAP);
-    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.PHOENIX);
-    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocols.AQUARIUS);
+    const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.SOROSWAP);
+    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
+    const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.AQUARIUS);
 
     expect(aquariusDistribution?.parts).toEqual(4);
     expect(soroswapDistribution?.parts).toEqual(10);

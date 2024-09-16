@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import JSBI from "jsbi";
 import _ from "lodash";
-import { Networks, Protocols, TradeType } from "../constants";
+import { Networks, Protocol, TradeType } from "../constants";
 import { Currency, Fraction, Pair, Percent, Route, Token } from "../entities";
 import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import {
@@ -15,7 +15,7 @@ import { SorobanContextType } from "../utils/contractInvoke/types";
 import { log } from "../utils/log";
 
 export interface GetPairsFn {
-  protocol: Protocols;
+  protocol: Protocol;
   fn: () => Promise<PairFromApi[]>;
 }
 
@@ -50,7 +50,7 @@ export type V2RouteWithValidQuote = {
 
 interface RouterOptions {
   pairsCacheInSeconds?: number;
-  protocols?: Protocols[];
+  protocols?: Protocol[];
   network?: Networks;
   maxHops?: number;
   getPairsFns?: GetPairsFns;
@@ -67,7 +67,7 @@ interface RouterOptions {
  * 
  * const router = new Router({
     pairsCacheInSeconds: 20,
-    protocols: [Protocols.SOROSWAP],
+    protocols: [Protocol.SOROSWAP],
     network: Networks.TESTNET,
   })
  *
@@ -80,7 +80,7 @@ export class Router {
   private _network: Networks;
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
-  private _protocols: Protocols[];
+  private _protocols: Protocol[];
   private _maxHops = 2;
 
   /**
@@ -90,7 +90,7 @@ export class Router {
    * ```ts
    * const router = new Router({
       pairsCacheInSeconds: 20,
-      protocols: [Protocols.SOROSWAP],
+      protocols: [Protocol.SOROSWAP],
       network: Networks.TESTNET,
     })
    * ```
@@ -106,7 +106,7 @@ export class Router {
       getPairsFns: options.getPairsFns,
     });
     this._quoteProvider = new QuoteProvider();
-    this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
+    this._protocols = options.protocols?.sort() || [Protocol.SOROSWAP];
     this._maxHops = options.maxHops || 2;
   }
 
@@ -297,8 +297,8 @@ export class Router {
    * console.log(result.distribution);
    * // Output:
    * // [
-   * //   { protocol: Protocols.SOROSWAP, amount: 100, path: ['0x...', '0x...', '0x...'] },
-   * //   { protocol: Protocols.PHOENIX, amount: 50, path: ['0x...', '0x...', '0x...'] }
+   * //   { protocol: Protocol.SOROSWAP, amount: 100, path: ['0x...', '0x...', '0x...'] },
+   * //   { protocol: Protocol.PHOENIX, amount: 50, path: ['0x...', '0x...', '0x...'] }
    * // ]
    */
   public async routeSplit(
@@ -487,7 +487,7 @@ export class Router {
     currencyOut: Currency,
     amountIn: CurrencyAmount,
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const tokenOut = currencyOut.wrapped;
 
@@ -528,7 +528,7 @@ export class Router {
     currencyOut: Currency,
     amountOut: CurrencyAmount,
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const tokenIn = currencyIn.wrapped;
 
@@ -561,7 +561,7 @@ export class Router {
     amountIn: CurrencyAmount,
     tokenOut: Token,
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ): Promise<V2RouteWithValidQuote> {
     const {
       routesWithQuotes: quotesRaw,
@@ -590,7 +590,7 @@ export class Router {
     amountOut: CurrencyAmount,
     tokenIn: Token,
     routes: V2Route[],
-    protocol: Protocols = Protocols.SOROSWAP
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const {
       routesWithQuotes: quotesRaw,
@@ -616,7 +616,7 @@ export class Router {
   private async _getAllRoutes(
     tokenIn: Token,
     tokenOut: Token,
-    protocols: Protocols[],
+    protocols: Protocol[],
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
@@ -661,7 +661,7 @@ export class Router {
   private async _getAllRoutesByProtocol(
     tokenIn: Token,
     tokenOut: Token,
-    protocol: Protocols,
+    protocol: Protocol,
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
