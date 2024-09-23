@@ -1,0 +1,32 @@
+name: Run Jest Tests
+
+# Run this action when a pull request is opened or updated
+on:
+    pull_request:
+    workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest  # The environment to run the action
+    strategy:
+      matrix:
+        node-version: [18.x]  # Run the tests on Node.js version 18
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # Install dependencies
+      - name: Install dependencies
+        run: yarn install
+
+      # Run Jest tests
+      - name: Run Jest tests
+        run: yarn test --ci --coverage

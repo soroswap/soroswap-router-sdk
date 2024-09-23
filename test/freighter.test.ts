@@ -1,7 +1,7 @@
 import {
   CurrencyAmount,
   Networks,
-  Protocols,
+  Protocol,
   Router,
   Token,
   TradeType,
@@ -10,7 +10,7 @@ import { GetPairsFns } from "../src/router/router";
 
 const createRouter = (
   getPairsFns: GetPairsFns,
-  protocols: Protocols[] = [Protocols.SOROSWAP]
+  protocols: Protocol[] = [Protocol.SOROSWAP]
 ) => {
   return new Router({
     pairsCacheInSeconds: 60,
@@ -39,7 +39,7 @@ describe("Router", () => {
   it("Ensure Direct Routing Between Tokens With Equal Reserves", async () => {
     const router = createRouter([
       {
-        protocol: Protocols.SOROSWAP,
+        protocol: Protocol.SOROSWAP,
         fn: async () => {
           const res = await fetch(
             // this endpoint is used to get the pairs for Testnet which `Router` will used to determine conversion rate
@@ -86,7 +86,7 @@ describe("Router", () => {
   // it("Select Optimal Route for Exact Input Based on Reserve Ratios", async () => {
   //   const router = createRouter([
   //     {
-  //       protocol: Protocols.SOROSWAP,
+  //       protocol: Protocol.SOROSWAP,
   //       fn: async () => [
   //         {
   //           tokenA: "XLM_ADDRESS",
@@ -127,7 +127,7 @@ describe("Router", () => {
   // it("Select Optimal Route for Exact Output Based on Reserve Ratios", async () => {
   //   const router = createRouter([
   //     {
-  //       protocol: Protocols.SOROSWAP,
+  //       protocol: Protocol.SOROSWAP,
   //       fn: async () => [
   //         {
   //           tokenA: "XLM_ADDRESS",
@@ -167,7 +167,7 @@ describe("Router", () => {
   // it("Handle Scenario With No Available Trading Pairs", async () => {
   //   const router = createRouter([
   //     {
-  //       protocol: Protocols.SOROSWAP,
+  //       protocol: Protocol.SOROSWAP,
   //       fn: async () => [],
   //     },
   //   ]);
@@ -181,11 +181,11 @@ describe("Router", () => {
   //   expect(route).toBeNull();
   // });
 
-  // it("Should Split Distribution And Select Optimal Route When Using Split Protocols", async () => {
+  // it("Should Split Distribution And Select Optimal Route When Using Split Protocol", async () => {
   //   const router = createRouter(
   //     [
   //       {
-  //         protocol: Protocols.SOROSWAP,
+  //         protocol: Protocol.SOROSWAP,
   //         fn: async () => [
   //           {
   //             tokenA: "XLM_ADDRESS",
@@ -208,7 +208,7 @@ describe("Router", () => {
   //         ],
   //       },
   //       {
-  //         protocol: Protocols.PHOENIX,
+  //         protocol: Protocol.PHOENIX,
   //         fn: async () => [
   //           {
   //             tokenA: "XLM_ADDRESS",
@@ -231,7 +231,7 @@ describe("Router", () => {
   //         ],
   //       },
   //     ],
-  //     [Protocols.SOROSWAP, Protocols.PHOENIX]
+  //     [Protocol.SOROSWAP, Protocol.PHOENIX]
   //   );
 
   //   const route = await router.routeSplit(

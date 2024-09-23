@@ -1,7 +1,7 @@
 import BigNumber from "bignumber.js";
 import JSBI from "jsbi";
 import _ from "lodash";
-import { Networks, Protocols, TradeType } from "../constants";
+import { Networks, Protocol, TradeType } from "../constants";
 import { Currency, Fraction, Pair, Percent, Route, Token } from "../entities";
 import { PairFromApi, PairProvider } from "../providers/pair-provider";
 import {
@@ -15,7 +15,7 @@ import { SorobanContextType } from "../utils/contractInvoke/types";
 import { log } from "../utils/log";
 
 export interface GetPairsFn {
-  protocol: Protocols;
+  protocol: Protocol;
   fn: () => Promise<PairFromApi[]>;
 }
 
@@ -50,7 +50,7 @@ export type V2RouteWithValidQuote = {
 
 interface RouterOptions {
   pairsCacheInSeconds?: number;
-  protocols?: Protocols[];
+  protocols?: Protocol[];
   network?: Networks;
   maxHops?: number;
   getPairsFns?: GetPairsFns;
@@ -67,7 +67,7 @@ interface RouterOptions {
  * 
  * const router = new Router({
     pairsCacheInSeconds: 20,
-    protocols: [Protocols.SOROSWAP],
+    protocols: [Protocol.SOROSWAP],
     network: Networks.TESTNET,
   })
  *
@@ -80,7 +80,7 @@ export class Router {
   private _network: Networks;
   private _pairProvider: PairProvider;
   private _quoteProvider: QuoteProvider;
-  private _protocols: Protocols[];
+  private _protocols: Protocol[];
   private _maxHops = 2;
 
   /**
@@ -90,7 +90,7 @@ export class Router {
    * ```ts
    * const router = new Router({
       pairsCacheInSeconds: 20,
-      protocols: [Protocols.SOROSWAP],
+      protocols: [Protocol.SOROSWAP],
       network: Networks.TESTNET,
     })
    * ```
@@ -106,7 +106,7 @@ export class Router {
       getPairsFns: options.getPairsFns,
     });
     this._quoteProvider = new QuoteProvider();
-    this._protocols = options.protocols?.sort() || [Protocols.SOROSWAP];
+    this._protocols = options.protocols?.sort() || [Protocol.SOROSWAP];
     this._maxHops = options.maxHops || 2;
   }
 
@@ -154,7 +154,7 @@ export class Router {
         factoryAddress,
         sorobanContext
       );
-  
+
       return this.routeExactOut(
         quoteCurrency,
         amount.currency,
@@ -164,62 +164,124 @@ export class Router {
     }
   }
 
+  // /**
+  //  * @private
+  //  * @param s - The total parts to be distributed among protocols.
+  //  * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
+  //  * @returns An array containing the total value of the distributed amounts and the distribution percentages.
+  //  */
+  // private _findBestDistribution(
+  //   s: number,
+  //   amounts: number[][]
+  // ): [number, number[]] {
+  //   const n = amounts.length;
+
+  //   const VERY_NEGATIVE_VALUE = -1e72;
+
+  //   const answer: number[][] = new Array(n);
+  //   const parent: number[][] = new Array(n);
+
+  //   for (let i = 0; i < n; i++) {
+  //     answer[i] = new Array(s + 1).fill(0);
+  //     parent[i] = new Array(s + 1).fill(0);
+  //   }
+
+  //   for (let j = 0; j <= s; j++) {
+  //     answer[0][j] = amounts[0][j];
+  //     for (let i = 1; i < n; i++) {
+  //       answer[i][j] = VERY_NEGATIVE_VALUE;
+  //     }
+  //     parent[0][j] = 0;
+  //   }
+
+  //   for (let i = 1; i < n; i++) {
+  //     for (let j = 0; j <= s; j++) {
+  //       answer[i][j] = answer[i - 1][j];
+  //       parent[i][j] = j;
+
+  //       for (let k = 1; k <= j; k++) {
+  //         if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
+  //           answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+  //           parent[i][j] = j - k;
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   const distribution: number[] = new Array(this._protocols.length).fill(0);
+  //   let partsLeft = s;
+  //   for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
+  //     distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
+  //     partsLeft = parent[curExchange][partsLeft];
+  //   }
+
+  //   const returnAmount =
+  //     answer[n - 1][s] === VERY_NEGATIVE_VALUE ? 0 : answer[n - 1][s];
+
+  //   return [returnAmount, distribution];
+  // }
+
   /**
-   * @private
-   * @param s - The total amount to be distributed among protocols.
-   * @param amounts - A 2D array representing the amounts available for each protocol and each distribution percentage.
-   * @returns An array containing the total value of the distributed amounts and the distribution percentages.
+   * Generic function to find the best distribution based on a strategy (minimization or maximization).
+   * @param {number} s - The total amount to distribute.
+   * @param {number[][]} data - The values or costs associated with each allocation.
+   * @param {Function} comparator - A function to compare values (e.g., Math.max or Math.min).
+   * @param {number} initialValue - The initial value (positive or negative infinity).
+   * @returns {[number, number[]]} - A tuple with the result (minimized or maximized) and the distribution array.
    */
-  private _findBestDistribution(
+  _findBestDistribution(
     s: number,
-    amounts: number[][]
-  ): [number, number[]] {
+    amounts: number[][],
+    comparator: Function,
+    initialValue: number): [number, number[]] {
     const n = amounts.length;
+    const result = Array.from({ length: n }, () => Array(s + 1).fill(initialValue));
+    const parent = Array.from({ length: n }, () => Array(s + 1).fill(0));
 
-    const VERY_NEGATIVE_VALUE = -1e72;
-
-    const answer: number[][] = new Array(n);
-    const parent: number[][] = new Array(n);
-
-    for (let i = 0; i < n; i++) {
-      answer[i] = new Array(s + 1).fill(0);
-      parent[i] = new Array(s + 1).fill(0);
-    }
-
+    // Initialize the first row
     for (let j = 0; j <= s; j++) {
-      answer[0][j] = amounts[0][j];
-      for (let i = 1; i < n; i++) {
-        answer[i][j] = VERY_NEGATIVE_VALUE;
-      }
+      result[0][j] = amounts[0][j];
       parent[0][j] = 0;
     }
 
+    // Build the DP table
     for (let i = 1; i < n; i++) {
       for (let j = 0; j <= s; j++) {
-        answer[i][j] = answer[i - 1][j];
+        result[i][j] = result[i - 1][j];
         parent[i][j] = j;
 
         for (let k = 1; k <= j; k++) {
-          if (answer[i - 1][j - k] + amounts[i][k] > answer[i][j]) {
-            answer[i][j] = answer[i - 1][j - k] + amounts[i][k];
+          const newValue = result[i - 1][j - k] + amounts[i][k];
+          if (comparator(newValue, result[i][j]) === newValue) {
+            result[i][j] = newValue;
             parent[i][j] = j - k;
           }
         }
       }
     }
 
-    const distribution: number[] = new Array(this._protocols.length).fill(0);
-
+    // Reconstruct the best distribution
+    const distribution = Array(n).fill(0);
     let partsLeft = s;
-    for (let curExchange = n - 1; partsLeft > 0; curExchange--) {
-      distribution[curExchange] = partsLeft - parent[curExchange][partsLeft];
-      partsLeft = parent[curExchange][partsLeft];
+    for (let i = n - 1; i >= 0 && partsLeft > 0; i--) {
+      distribution[i] = partsLeft - parent[i][partsLeft];
+      partsLeft = parent[i][partsLeft];
     }
 
-    const returnAmount =
-      answer[n - 1][s] === VERY_NEGATIVE_VALUE ? 0 : answer[n - 1][s];
+    // Final result (minimized or maximized)
+    const finalResult = result[n - 1][s] === initialValue ? 0 : result[n - 1][s];
 
-    return [returnAmount, distribution];
+    return [finalResult, distribution];
+  }
+
+  // Maximize value version
+  _findMaxValueDistribution(s: number, values: number[][]) {
+    return this._findBestDistribution(s, values, Math.max, Number.NEGATIVE_INFINITY);
+  }
+
+  // Minimize cost version
+  _findMinCostDistribution(s: number, costs: number[][]) {
+    return this._findBestDistribution(s, costs, Math.min, Number.POSITIVE_INFINITY);
   }
 
   /**
@@ -235,8 +297,8 @@ export class Router {
    * console.log(result.distribution);
    * // Output:
    * // [
-   * //   { protocol: Protocols.SOROSWAP, amount: 100, path: ['0x...', '0x...', '0x...'] },
-   * //   { protocol: Protocols.PHOENIX, amount: 50, path: ['0x...', '0x...', '0x...'] }
+   * //   { protocol: Protocol.SOROSWAP, amount: 100, path: ['0x...', '0x...', '0x...'] },
+   * //   { protocol: Protocol.PHOENIX, amount: 50, path: ['0x...', '0x...', '0x...'] }
    * // ]
    */
   public async routeSplit(
@@ -247,12 +309,11 @@ export class Router {
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
-    // console.log('🚀 « amount:', amount.toFixed());
-    const interval = 100 / parts;
 
     const partsArray = Array.from(
       { length: parts },
-      (_, index) => interval * (index + 1)
+      // (_, index) => interval * (index + 1)
+      (_, index) => (index + 1)
     );
 
     let amounts: number[][] = new Array(this._protocols.length)
@@ -267,49 +328,70 @@ export class Router {
       .fill(null)
       .map(() => new Array(parts + 1).fill(0));
 
-      let routes: V2Route[] = [];
-      if(tradeType === TradeType.EXACT_INPUT) {
-        routes = await this._getAllRoutes(
+    let routesProtocol: { [protocol: string]: V2Route[] } = {};
+
+    if (tradeType === TradeType.EXACT_INPUT) {
+
+      const protocolRoutes = await Promise.all(this._protocols.map(async (protocol) => {
+        const routes = await this._getAllRoutesByProtocol(
           amount.currency.wrapped,
           quoteCurrency.wrapped,
-          this._protocols,
+          protocol,
           factoryAddress,
           sorobanContext
         );
-      } else {
-        routes = await this._getAllRoutes(
+        return { protocol, routes };
+      }));
+      protocolRoutes.forEach(({ protocol, routes }) => {
+        routesProtocol[protocol] = routes;
+      });
+
+    } else {
+      const protocolRoutes = await Promise.all(this._protocols.map(async (protocol) => {
+        const routes = await this._getAllRoutesByProtocol(
           quoteCurrency.wrapped,
           amount.currency.wrapped,
-          this._protocols,
+          protocol,
           factoryAddress,
           sorobanContext
         );
-      }
+        return { protocol, routes };
+      }));
+      protocolRoutes.forEach(({ protocol, routes }) => {
+        routesProtocol[protocol] = routes;
+      });
+    }
 
     let routeArray: (BuildTradeReturn | null)[] = [];
 
     for (let i = 0; i < this._protocols.length; i++) {
       for (let j = 0; j < partsArray.length; j++) {
         const part = partsArray[j];
-        const amountPerProtocol = amount.multiply(part).divide(100);
+        const amountPerProtocol = amount.multiply(part).divide(parts);
 
         let route: BuildTradeReturn | null = null;
+
+        const routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
 
         if (tradeType === TradeType.EXACT_INPUT) {
           route = await this.routeExactIn(
             amount.currency,
             quoteCurrency,
             amountPerProtocol,
-            routes
+            routeProtocol,
+            this._protocols[i]
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountOutMin) || 0;
         } else {
+          const routeProtocol: V2Route[] = routesProtocol[this._protocols[i]];
+
           route = await this.routeExactOut(
             quoteCurrency,
             amount.currency,
             amountPerProtocol,
-            routes
+            routeProtocol,
+            this._protocols[i]
           );
 
           amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
@@ -322,10 +404,18 @@ export class Router {
       }
     }
 
-    const [totalAmount, distribution] = this._findBestDistribution(
-      parts,
-      amounts
-    );
+    let totalAmount, distribution
+    if (tradeType === TradeType.EXACT_INPUT) {
+      [totalAmount, distribution] = this._findMaxValueDistribution(
+        parts,
+        amounts
+      );
+    } else {
+      [totalAmount, distribution] = this._findMinCostDistribution(
+        parts,
+        amounts
+      );
+    }
 
     const filteredDistribution = distribution.filter((value) => value !== 0);
 
@@ -363,7 +453,7 @@ export class Router {
         amountInMax: String(totalAmount),
         amountOut: amount.quotient.toString(),
         path: [],
-        distribution: filteredDistribution.map((amount, index) => {
+        distribution: distribution.map((amount, index) => {
           return {
             protocol_id: this._protocols[index],
             path: paths[index][amount],
@@ -397,13 +487,15 @@ export class Router {
     currencyOut: Currency,
     amountIn: CurrencyAmount,
     routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const tokenOut = currencyOut.wrapped;
 
     const routeQuote = await this._findBestRouteExactIn(
       amountIn,
       tokenOut,
-      routes
+      routes,
+      protocol
     );
 
     if (!routeQuote) return null;
@@ -435,14 +527,16 @@ export class Router {
     currencyIn: Currency,
     currencyOut: Currency,
     amountOut: CurrencyAmount,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const tokenIn = currencyIn.wrapped;
 
     const routeQuote = await this._findBestRouteExactOut(
       amountOut,
       tokenIn,
-      routes
+      routes,
+      protocol
     );
 
     if (!routeQuote) return null;
@@ -466,11 +560,13 @@ export class Router {
   private async _findBestRouteExactIn(
     amountIn: CurrencyAmount,
     tokenOut: Token,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ): Promise<V2RouteWithValidQuote> {
     const {
       routesWithQuotes: quotesRaw,
-    } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes);
+    } = await this._quoteProvider.getQuotesManyExactIn([amountIn], routes, protocol);
+
 
     const bestQuote = await this._getBestQuote(
       routes,
@@ -493,11 +589,12 @@ export class Router {
   private async _findBestRouteExactOut(
     amountOut: CurrencyAmount,
     tokenIn: Token,
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const {
       routesWithQuotes: quotesRaw,
-    } = await this._quoteProvider.getQuotesManyExactOut([amountOut], routes);
+    } = await this._quoteProvider.getQuotesManyExactOut([amountOut], routes, protocol);
 
     const bestQuote = await this._getBestQuote(
       routes,
@@ -519,7 +616,7 @@ export class Router {
   private async _getAllRoutes(
     tokenIn: Token,
     tokenOut: Token,
-    protocols: Protocols[],
+    protocols: Protocol[],
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
@@ -552,6 +649,26 @@ export class Router {
   }
 
   /**
+   * Retrieves all routes for swapping tokens based on the specified protocol.
+   * 
+   * @param tokenIn - The input token for the swap.
+   * @param tokenOut - The output token for the swap.
+   * @param protocol - The protocol to use for the swap.
+   * @param factoryAddress - The address of the factory contract.
+   * @param sorobanContext - The Soroban context type.
+   * @returns A promise that resolves to the array of routes for swapping tokens.
+   */
+  private async _getAllRoutesByProtocol(
+    tokenIn: Token,
+    tokenOut: Token,
+    protocol: Protocol,
+    factoryAddress?: string,
+    sorobanContext?: SorobanContextType
+  ) {
+    return this._getAllRoutes(tokenIn, tokenOut, [protocol], factoryAddress, sorobanContext);
+  }
+
+  /**
    * Recursively computes all routes from tokenIn to tokenOut using a depth-first search algorithm, considering a maximum number of hops.
    *
    * @param tokenIn The starting token for route computation.
@@ -577,7 +694,6 @@ export class Router {
     for (const pair of pairs) {
       if (currentPath.indexOf(pair) !== -1 || !pair.involvesToken(tokenIn))
         continue;
-
       const outputToken = pair.token0.equals(tokenIn)
         ? pair.token1
         : pair.token0;
@@ -618,8 +734,7 @@ export class Router {
     routeType: TradeType
   ) {
     log.debug(
-      `Got ${
-        _.filter(quotesRaw, ([_, quotes]) => !!quotes[0]).length
+      `Got ${_.filter(quotesRaw, ([_, quotes]) => !!quotes[0]).length
       } valid quotes from ${routes.length} possible routes.`
     );
 

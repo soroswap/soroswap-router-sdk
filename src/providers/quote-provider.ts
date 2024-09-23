@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { TradeType } from "../constants";
+import { Protocol, TradeType } from "../constants";
 import { Token, Route } from "../entities";
 import {
   InsufficientInputAmountError,
@@ -20,7 +20,7 @@ export type V2AmountQuote = {
  * @ignore
  * Extends the basic Route class specifically for tokens, defining a route through which a trade can be executed.
  */
-export class V2Route extends Route<Token, Token> {}
+export class V2Route extends Route<Token, Token> { }
 
 /**
  * @ignore
@@ -37,7 +37,7 @@ export type V2RouteWithQuotes = [V2Route, V2AmountQuote[]];
  *
  */
 export class QuoteProvider {
-  constructor() {}
+  constructor() { }
 
   /**
    * Fetches quotes for multiple exact input amounts across specified routes.
@@ -48,9 +48,10 @@ export class QuoteProvider {
    */
   public async getQuotesManyExactIn(
     amountIns: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
-    return this.getQuotes(amountIns, routes, TradeType.EXACT_INPUT);
+    return this.getQuotes(amountIns, routes, TradeType.EXACT_INPUT, protocol);
   }
 
   /**
@@ -62,9 +63,10 @@ export class QuoteProvider {
    */
   public async getQuotesManyExactOut(
     amountOuts: CurrencyAmount[],
-    routes: V2Route[]
+    routes: V2Route[],
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
-    return this.getQuotes(amountOuts, routes, TradeType.EXACT_OUTPUT);
+    return this.getQuotes(amountOuts, routes, TradeType.EXACT_OUTPUT, protocol);
   }
 
   /**
@@ -78,7 +80,8 @@ export class QuoteProvider {
   public async getQuotes(
     amounts: CurrencyAmount[],
     routes: V2Route[],
-    tradeType: TradeType
+    tradeType: TradeType,
+    protocol: Protocol = Protocol.SOROSWAP
   ) {
     const routesWithQuotes: V2RouteWithQuotes[] = [];
 
@@ -93,7 +96,19 @@ export class QuoteProvider {
             let outputAmount = amount.wrapped;
 
             for (const pair of route.pairs) {
-              [outputAmount] = pair.getOutputAmount(outputAmount);
+              switch (protocol) {
+                case Protocol.SOROSWAP:
+                  [outputAmount] = pair.getOutputAmountSoroswap(outputAmount);
+                  break;
+                case Protocol.PHOENIX:
+                  [outputAmount] = pair.getOutputAmountPhoenix(outputAmount);
+                  break;
+                case Protocol.AQUARIUS:
+                  [outputAmount] = pair.getOutputAmountAquarius(outputAmount);
+                  break;
+                default:
+                  throw new Error(`Protocol ${protocol} not supported`);
+              }
             }
 
             amountQuotes.push({
@@ -105,7 +120,19 @@ export class QuoteProvider {
 
             for (let i = route.pairs.length - 1; i >= 0; i--) {
               const pair = route.pairs[i]!;
-              [inputAmount] = pair.getInputAmount(inputAmount);
+              switch (protocol) {
+                case Protocol.SOROSWAP:
+                  [inputAmount] = pair.getInputAmountSoroswap(inputAmount);
+                  break;
+                case Protocol.PHOENIX:
+                  [inputAmount] = pair.getInputAmountPhoenix(inputAmount);
+                  break;
+                case Protocol.AQUARIUS:
+                  [inputAmount] = pair.getInputAmountAquarius(inputAmount);
+                  break;
+                default:
+                  throw new Error(`Protocol ${protocol} not supported`);
+              }
             }
 
             amountQuotes.push({
@@ -130,7 +157,6 @@ export class QuoteProvider {
 
       routesWithQuotes.push([route, amountQuotes]);
     }
-
     return {
       routesWithQuotes,
     };

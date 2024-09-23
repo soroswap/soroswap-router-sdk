@@ -1,5 +1,5 @@
 import { Address, Networks, scValToNative, xdr } from "@stellar/stellar-sdk";
-import { Protocols } from "../constants";
+import { Protocol } from "../constants";
 import { CurrencyAmount, Pair, Token } from "../entities";
 import { contractInvoke } from "../utils/contractInvoke/contractInvoke";
 import { SorobanContextType } from "../utils/contractInvoke/types";
@@ -14,7 +14,8 @@ export interface PairFromApi {
   tokenB: string;
   reserveA: string;
   reserveB: string;
-  protocol?: Protocols;
+  protocol?: Protocol;
+  fee?: string;
 }
 
 /**
@@ -155,7 +156,7 @@ export class PairProvider {
     address1: string,
     factoryAddress: string | undefined,
     sorobanContext: SorobanContextType | undefined,
-    protocols: Protocols[]
+    protocols: Protocol[]
   ): Promise<Pair[] | null> {
     const sortedProtocols = protocols.sort();
 
@@ -209,7 +210,8 @@ export class PairProvider {
 
           const pairInstance = new Pair(
             CurrencyAmount.fromRawAmount(token0, pair.reserveA),
-            CurrencyAmount.fromRawAmount(token1, pair.reserveB)
+            CurrencyAmount.fromRawAmount(token1, pair.reserveB),
+            pair.fee ? Number(pair.fee) : undefined
           );
 
           return pairInstance;

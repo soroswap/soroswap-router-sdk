@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import invariant from "tiny-invariant";
-import { Networks, ONE, ZERO, _1000, _997 } from "../constants";
+import { BASIS_POINTS, Networks, ONE, ZERO, _1000, _997 } from "../constants";
 import { CurrencyAmount, Price } from "./fractions";
 import { Token } from "./token";
 
@@ -37,6 +37,7 @@ export class InsufficientInputAmountError extends Error {
 
 export class Pair {
   public readonly liquidityToken: Token;
+  private fee: number;
   private readonly tokenAmounts: [CurrencyAmount<Token>, CurrencyAmount<Token>];
 
   public static getAddress(tokenA: Token, tokenB: Token): string {
@@ -45,7 +46,8 @@ export class Pair {
 
   public constructor(
     currencyAmountA: CurrencyAmount<Token>,
-    tokenAmountB: CurrencyAmount<Token>
+    tokenAmountB: CurrencyAmount<Token>,
+    fee: number = 30,
   ) {
     const tokenAmounts = currencyAmountA.currency.sortsBefore(
       tokenAmountB.currency
@@ -63,6 +65,7 @@ export class Pair {
       CurrencyAmount<Token>,
       CurrencyAmount<Token>
     ];
+    this.fee = fee;
   }
 
   /**
@@ -172,7 +175,6 @@ export class Pair {
       inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
       JSBI.divide(numerator, denominator) // JSBI.divide will round down by itself, which is desired
     );
-
     if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
       throw new InsufficientReservesError();
     }
@@ -188,6 +190,125 @@ export class Pair {
         outputReserve.subtract(outputAmount)
       ),
     ];
+  }
+
+  public getOutputAmountSoroswap(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    return this.getOutputAmount(inputAmount);
+  }
+
+  public getOutputAmountPhoenix(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    invariant(this.involvesToken(inputAmount.currency), "TOKEN");
+    if (
+      JSBI.equal(this.reserve0.quotient, ZERO) ||
+      JSBI.equal(this.reserve1.quotient, ZERO)
+    ) {
+      throw new InsufficientReservesError();
+    }
+    const inputReserve = this.reserveOf(inputAmount.currency);
+    const outputReserve = this.reserveOf(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+
+    // This is how it is calculated inside the contract
+    // However we encounter a loss of precision when using JSBI
+    // So we choose to use the formula below
+    //
+    // const crossProduct = JSBI.multiply(
+    //   inputReserve.quotient,
+    //   outputReserve.quotient
+    // );
+    // 
+    // const outputAmountBeforeTax = JSBI.subtract(
+    //   outputReserve.quotient,
+    //   JSBI.divide(
+    //     crossProduct,
+    //     JSBI.add(inputReserve.quotient, inputAmount.quotient)
+    //   )
+    // );
+
+    const outputAmountBeforeTax = JSBI.divide(
+      JSBI.multiply(outputReserve.quotient, inputAmount.quotient),
+      JSBI.add(inputReserve.quotient, inputAmount.quotient)
+    );
+    const taxAmount = JSBI.divide(
+      JSBI.multiply(outputAmountBeforeTax, JSBI.BigInt(this.fee)),
+      BASIS_POINTS
+    );
+    const outputAmount = CurrencyAmount.fromRawAmount(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
+      JSBI.subtract(outputAmountBeforeTax, taxAmount)
+    );
+
+    // TODO: returnamount should be before tax
+    return [
+      outputAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(CurrencyAmount.fromRawAmount(
+          outputAmount.currency,
+          outputAmount.quotient)
+        )
+      )
+    ]
+  }
+
+  public getOutputAmountAquarius(
+    inputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    invariant(this.involvesToken(inputAmount.currency), "TOKEN");
+    if (
+      JSBI.equal(this.reserve0.quotient, ZERO) ||
+      JSBI.equal(this.reserve1.quotient, ZERO)
+    ) {
+      throw new InsufficientReservesError();
+    }
+    const inputReserve = this.reserveOf(inputAmount.currency);
+
+    const outputReserve = this.reserveOf(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+
+    const numerator = JSBI.multiply(
+      inputAmount.quotient,
+      outputReserve.quotient
+    );
+
+    const denominator = JSBI.add(
+      inputReserve.quotient,
+      inputAmount.quotient
+    );
+    const outputAmountBeforeTax = JSBI.divide(numerator, denominator);
+
+    const taxAmount = JSBI.divide(JSBI.multiply(outputAmountBeforeTax, JSBI.BigInt(this.fee)), BASIS_POINTS);
+
+    const outputAmount = CurrencyAmount.fromRawAmount(
+      inputAmount.currency.equals(this.token0) ? this.token1 : this.token0,
+      JSBI.subtract(outputAmountBeforeTax, taxAmount)
+    );
+
+    if (JSBI.greaterThan(outputAmount.quotient, outputReserve.quotient)) {
+      throw new InsufficientReservesError();
+    }
+
+    if (JSBI.equal(outputAmount.quotient, ZERO)) {
+      throw new InsufficientInputAmountError();
+    }
+    // TODO: returnamount should be before tax
+
+    return [
+      outputAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(CurrencyAmount.fromRawAmount(
+          outputAmount.currency,
+          outputAmountBeforeTax)
+        )
+      )
+    ]
   }
 
   public getInputAmount(
@@ -237,5 +358,55 @@ export class Pair {
         outputReserve.subtract(outputAmount)
       ),
     ];
+  }
+
+  public getInputAmountSoroswap(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    return this.getInputAmount(outputAmount);
+  }
+
+  public getInputAmountPhoenix(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+    invariant(this.involvesToken(outputAmount.currency), "TOKEN");
+    const outputReserve = this.reserveOf(outputAmount.currency);
+    const inputReserve = this.reserveOf(
+      outputAmount.currency.equals(this.token0) ? this.token1 : this.token0
+    );
+
+    const numerator = JSBI.multiply(
+      JSBI.multiply(inputReserve.quotient, outputAmount.quotient),
+      BASIS_POINTS
+    );
+    const denominator =
+      JSBI.subtract(
+        JSBI.multiply(
+          outputReserve.quotient,
+          JSBI.subtract(BASIS_POINTS, JSBI.BigInt(this.fee))
+        ),
+        JSBI.multiply(
+          outputAmount.quotient,
+          BASIS_POINTS
+        )
+      );
+    const inputAmount = CurrencyAmount.fromRawAmount(
+      inputReserve.currency,
+      JSBI.divide(numerator, denominator)
+    );
+
+    return [inputAmount,
+      new Pair(
+        inputReserve.add(inputAmount),
+        outputReserve.subtract(outputAmount)
+      )
+    ]
+  }
+
+  public getInputAmountAquarius(
+    outputAmount: CurrencyAmount<Token>
+  ): [CurrencyAmount<Token>, Pair] {
+
+    return this.getInputAmountPhoenix(outputAmount);
   }
 }

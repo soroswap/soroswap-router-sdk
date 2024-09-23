@@ -3,9 +3,10 @@ import { Percent } from "./entities/fractions/percent";
 export type BigintIsh = JSBI | string | number;
 export { Networks } from "@stellar/stellar-sdk";
 
-export enum Protocols {
+export enum Protocol {
   SOROSWAP = "soroswap",
   PHOENIX = "phoenix",
+  AQUARIUS = "aquarius",
 }
 
 export enum TradeType {
