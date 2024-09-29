@@ -77,7 +77,9 @@ console.log(route.trade.path);
 //Output: ['0x...', '0x...', '0x...']
 ```
 
-## Development: Test
+# Development
+
+## Test
 
 ```
 bash docker/run.sh
@@ -109,11 +111,3 @@ yarn publish
 ```
 
 For beta versions you can use `yarn publish --tag beta`
-
-## Run tests
-
-```
-bash docker/run.sh
-yarn 
-yarn test
-```
