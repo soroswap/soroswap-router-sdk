@@ -77,6 +77,14 @@ console.log(route.trade.path);
 //Output: ['0x...', '0x...', '0x...']
 ```
 
+## Development: Test
+
+```
+bash docker/run.sh
+yarn
+yarn test
+```
+
 ## Document
 
 1.- Generate Documentation
