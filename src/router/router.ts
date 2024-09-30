@@ -449,7 +449,7 @@ export class Router {
       averagePriceImpact.denominator
     );
     
-    const distributionReturn = distribution.map((amount, index) => {
+    let distributionReturn = distribution.map((amount, index) => {
       let pathReturn;
       if (paths[index][amount] === 0) {
         pathReturn = []
@@ -464,6 +464,8 @@ export class Router {
         is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
       };
     });
+    // filter only if parts >0
+    distributionReturn = distributionReturn.filter((dist) => dist.parts > 0);
 
     return {
       amountCurrency: amount,
