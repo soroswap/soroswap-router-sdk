@@ -317,16 +317,16 @@ export class Router {
     );
 
     let amounts: number[][] = new Array(this._protocols.length)
-      .fill(null)
-      .map(() => new Array(parts + 1).fill(0));
-
+    .fill(null)
+    .map(() => new Array(parts + 1).fill(0));
+    
     let paths: any[][] = new Array(this._protocols.length)
-      .fill(null)
-      .map(() => new Array(parts + 1).fill(0));
+    .fill(null)
+    .map(() => new Array(parts + 1).fill(0));
 
     let priceImpacts: any[][] = new Array(this._protocols.length)
-      .fill(null)
-      .map(() => new Array(parts + 1).fill(0));
+    .fill(null)
+    .map(() => new Array(parts + 1).fill(0));
 
     let routesProtocol: { [protocol: string]: V2Route[] } = {};
 
@@ -425,11 +425,17 @@ export class Router {
 
     filteredDistribution.forEach((parts, index) => {
       if (parts > 0) {
-        const priceImpact = priceImpacts[index][parts];
-        weightedPriceImpact = weightedPriceImpact.add(
-          priceImpact.multiply(parts)
-        );
-        totalPartsValue += parts;
+        let priceImpact;
+        try{
+          priceImpact = priceImpacts[index][parts];
+          weightedPriceImpact = weightedPriceImpact.add(
+            priceImpact.multiply(parts)
+          );
+          totalPartsValue += parts;
+        }
+        catch(e){
+        console.log("🚀 ~ Router ~ filteredDistribution.forEach ~ e:", e)
+        }
       }
     });
 
@@ -442,6 +448,24 @@ export class Router {
       averagePriceImpact.numerator,
       averagePriceImpact.denominator
     );
+    
+    let distributionReturn = distribution.map((amount, index) => {
+      let pathReturn;
+      if (paths[index][amount] === 0) {
+        pathReturn = []
+      }
+      else {
+        pathReturn = paths[index][amount]
+      }
+      return {
+        protocol_id: this._protocols[index],
+        path: pathReturn,
+        parts: amount,
+        is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
+      };
+    });
+    // filter only if parts >0
+    distributionReturn = distributionReturn.filter((dist) => dist.parts > 0);
 
     return {
       amountCurrency: amount,
@@ -453,14 +477,7 @@ export class Router {
         amountInMax: String(totalAmount),
         amountOut: amount.quotient.toString(),
         path: [],
-        distribution: distribution.map((amount, index) => {
-          return {
-            protocol_id: this._protocols[index],
-            path: paths[index][amount],
-            parts: amount,
-            is_exact_in: tradeType == TradeType.EXACT_INPUT ? true : false,
-          };
-        }),
+        distribution: distributionReturn,
       },
       tradeType,
     };
@@ -640,7 +657,7 @@ export class Router {
       tokenIn,
       this._maxHops
     );
-
+    
     return routes;
   }
 
@@ -659,6 +676,7 @@ export class Router {
    * @returns A promise that resolves to the array of routes for swapping tokens.
    */
   private async _getAllRoutesByProtocol(
+
     tokenIn: Token,
     tokenOut: Token,
     protocol: Protocol,
