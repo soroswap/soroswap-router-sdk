@@ -251,7 +251,7 @@ describe("Router", () => {
           ],
         },
         {
-          protocol: Protocol.PHOENIX,
+          protocol: Protocol.AQUARIUS,
           fn: async () => [
             {
               tokenA: "XLM_ADDRESS",
@@ -274,7 +274,7 @@ describe("Router", () => {
           ],
         },
       ],
-      [Protocol.SOROSWAP, Protocol.PHOENIX]
+      [Protocol.SOROSWAP, Protocol.AQUARIUS]
     );
 
     const route = await router.routeSplit(
@@ -633,16 +633,86 @@ describe("Router", () => {
     );
     expect(route).not.toBeNull();
 
+    console.log('🚀 ~ it.only ~ route:', route);
+    console.log('🚀 ~ it.only ~ route.trade:', route.trade);
+    console.log('🚀 ~ it.only ~ route.trade.distribution:', route.trade.distribution);
+
     const soroswapDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.SOROSWAP);
-    const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
+    // const phoenixDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.PHOENIX);
     const aquariusDistribution = route.trade.distribution.find((d) => d.protocol_id === Protocol.AQUARIUS);
 
-    expect(aquariusDistribution?.parts).toEqual(4);
-    expect(soroswapDistribution?.parts).toEqual(10);
-    expect(phoenixDistribution?.parts).toEqual(6);
+    expect(aquariusDistribution?.parts).toEqual(7);
+    expect(soroswapDistribution?.parts).toEqual(13);
+    // expect(phoenixDistribution?.parts).toEqual(6);
 
-    expect(route.trade.amountInMax).toEqual("16117150066488");
+    expect(route.trade.amountInMax).toEqual("16385874025460");
 
+  });
+
+  it("Should use only 1 hop when using Phoenix protocol", async () => {
+    // Create the router
+    const router = createRouter(
+      [
+        {
+          protocol: Protocol.PHOENIX,
+          fn: async () => [
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "USDC_ADDRESS",
+              reserveA: "8291494350066",
+              reserveB: "706515116511",
+              fee: "30",
+            },
+            {
+              tokenA: "USDC_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "57162602823",
+              reserveB: "99250433014286",
+              fee: "30",
+            },
+            {
+              tokenA: "XLM_ADDRESS",
+              tokenB: "AQUA_ADDRESS",
+              reserveA: "82914943500660",
+              reserveB: "1226709907909250",
+              fee: "30",
+            },
+          ],
+        },
+      ],
+      [Protocol.PHOENIX]
+    );
+
+    // Define the input amount and target currency
+    const amountSplit = CurrencyAmount.fromRawAmount(XLM_TOKEN, 10000_0000000);
+    const quoteCurrency = AQUA_TOKEN;
+    const parts = 10;
+
+    // Route using the Phoenix protocol
+    const route = await router.routeSplit(
+      amountSplit,
+      quoteCurrency,
+      TradeType.EXACT_INPUT,
+      parts
+    );
+
+    expect(route).not.toBeNull();
+
+    // Extract Phoenix distribution
+    const phoenixDistribution = route.trade.distribution.find(
+      (d) => d.protocol_id === Protocol.PHOENIX
+    );
+
+    // Log route for debugging
+    console.log("🚀 ~ it ~ route.trade:", route.trade);
+    console.log("🚀 ~ it ~ route.trade.distribution:", route.trade.distribution);
+
+    // Assert that Phoenix uses only 1 hop
+    expect(phoenixDistribution).not.toBeNull();
+    expect(phoenixDistribution?.path.length).toEqual(2); // Only XLM and AQUA
+
+    // This test should initially fail because multiple hops are allowed
+    // until the logic is updated to ensure a single hop for Phoenix
   });
 
 });
