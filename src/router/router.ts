@@ -317,16 +317,16 @@ export class Router {
     );
 
     let amounts: number[][] = new Array(this._protocols.length)
-    .fill(null)
-    .map(() => new Array(parts + 1).fill(0));
-    
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
+
     let paths: any[][] = new Array(this._protocols.length)
-    .fill(null)
-    .map(() => new Array(parts + 1).fill(0));
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
 
     let priceImpacts: any[][] = new Array(this._protocols.length)
-    .fill(null)
-    .map(() => new Array(parts + 1).fill(0));
+      .fill(null)
+      .map(() => new Array(parts + 1).fill(0));
 
     let routesProtocol: { [protocol: string]: V2Route[] } = {};
 
@@ -361,6 +361,7 @@ export class Router {
         routesProtocol[protocol] = routes;
       });
     }
+    console.log('🚀 ~ Router ~ protocolRoutes.forEach ~ routesProtocol:', routesProtocol);
 
     let routeArray: (BuildTradeReturn | null)[] = [];
 
@@ -394,7 +395,7 @@ export class Router {
             this._protocols[i]
           );
 
-          amounts[i][j + 1] = Number(route?.trade?.amountInMax) || 0;
+          amounts[i][j + 1] = Number(route?.trade?.amountInMax) || Number.POSITIVE_INFINITY;
         }
 
         routeArray.push(route);
@@ -404,6 +405,7 @@ export class Router {
       }
     }
 
+    console.log('🚀 ~ Router ~ amounts:', amounts);
     let totalAmount, distribution
     if (tradeType === TradeType.EXACT_INPUT) {
       [totalAmount, distribution] = this._findMaxValueDistribution(
@@ -426,15 +428,15 @@ export class Router {
     filteredDistribution.forEach((parts, index) => {
       if (parts > 0) {
         let priceImpact;
-        try{
+        try {
           priceImpact = priceImpacts[index][parts];
           weightedPriceImpact = weightedPriceImpact.add(
             priceImpact.multiply(parts)
           );
           totalPartsValue += parts;
         }
-        catch(e){
-        console.log("🚀 ~ Router ~ filteredDistribution.forEach ~ e:", e)
+        catch (e) {
+          console.log("🚀 ~ Router ~ filteredDistribution.forEach ~ e:", e)
         }
       }
     });
@@ -448,7 +450,7 @@ export class Router {
       averagePriceImpact.numerator,
       averagePriceImpact.denominator
     );
-    
+
     let distributionReturn = distribution.map((amount, index) => {
       let pathReturn;
       if (paths[index][amount] === 0) {
@@ -637,6 +639,7 @@ export class Router {
     factoryAddress?: string,
     sorobanContext?: SorobanContextType
   ) {
+    console.log('🚀 ~ Router ~ _getAllRoutes ~ protocols:', protocols);
     const allPairs = await this._pairProvider.getAllPairs(
       tokenIn.address,
       tokenOut.address,
@@ -644,9 +647,9 @@ export class Router {
       sorobanContext,
       protocols
     );
+    console.log('🚀 ~ Router ~ allPairs:', `${protocols}`, allPairs);
 
     if (!allPairs) return [];
-
     const routes: V2Route[] = this._computeAllRoutes(
       tokenIn,
       tokenOut,
@@ -655,9 +658,11 @@ export class Router {
       [],
       [],
       tokenIn,
-      this._maxHops
+      protocols[0] === Protocol.PHOENIX ? 1 : this._maxHops
+      // this._maxHops
     );
-    
+    console.log('🚀 ~ Router ~ routes:', `${protocols}`, routes);
+
     return routes;
   }
 
@@ -676,7 +681,6 @@ export class Router {
    * @returns A promise that resolves to the array of routes for swapping tokens.
    */
   private async _getAllRoutesByProtocol(
-
     tokenIn: Token,
     tokenOut: Token,
     protocol: Protocol,
